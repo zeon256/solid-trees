@@ -635,11 +635,9 @@ describe('file-tree keyboard and selection (dom)', () => {
         '[data-item-section="content"] [data-item-section="spacing-item"]'
       )
     ).toBeNull();
-    // Upstream asserted `[data-truncate-container]` (OverflowText); the Solid
-    // port renders the name directly as `<span data-item-name>`.
     expect(
       nestedFileButton.querySelector(
-        '[data-item-section="content"] [data-item-name]'
+        '[data-item-section="content"] [data-truncate-container]'
       )
     ).not.toBeNull();
     expect(focusedRow).toBeNull();

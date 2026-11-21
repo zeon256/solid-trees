@@ -4,7 +4,8 @@ SolidJS 2 port of [`@pierre/trees`](https://trees.software) — a virtualized,
 path-first file tree. The model layer (path store, controller, focus, selection,
 search, rename, drag and drop, git status) is vendored from upstream; the view
 is a native Solid 2 rewrite of upstream's Preact `FileTreeView`, rendered into
-the light DOM and shipped unstyled.
+the light DOM, with upstream's visual styles shipped as an importable
+stylesheet.
 
 ## Workspace
 
@@ -73,24 +74,69 @@ function Explorer() {
 - `<FileTree>` needs a bounded height. Swapping the `model` prop remounts the
   view.
 
+## Styling
+
+```ts
+import 'solid-trees/styles.css';
+```
+
+The stylesheet is a port of upstream's `style.css`: the same `--trees-*` tokens,
+the same fallback chain (`--trees-*-override` → `--trees-theme-*` → default),
+colored file icons, git status colors, selection/focus/hover states, indent
+guides (the focused row's parent guide carries
+`data-item-guide-focused="true"`), sticky rows, search input, rename input, drag
+states, the context-menu trigger, and middle truncation of long names.
+
+- Scoping: every rule sits in `@scope ([data-file-tree-virtualized-root])`.
+  Header and context-menu content is excluded from the scope (it still inherits
+  color and font from the root).
+- Layers: `@layer solid-trees.structure, solid-trees.base, solid-trees.theme`.
+  `<FileTree>` injects `solid-trees.structure` itself (virtualizer layout, row
+  lanes, truncation mechanics), so trees work without the import; the import
+  adds `solid-trees.base`. `solid-trees.theme` is reserved for your theme rules.
+  Unlayered page CSS overrides every layer (it replaces upstream's `unsafeCSS`).
+- Page resets: the base layer starts with a reset for the tree's own controls,
+  so element rules from layers declared earlier (e.g. Tailwind's preflight in
+  `@layer base`) do not leak into rows. Rules in later layers or unlayered rules
+  still win; import `solid-trees/styles.css` after your reset or declare the
+  order up front (`@layer theme, base, components, utilities, solid-trees;`).
+- Color scheme: the root sets `color-scheme: light dark`, so colors follow the
+  OS preference. Pin it with `style={{ 'color-scheme': 'dark' }}` or CSS.
+- Tokens: set any `--trees-*-override` on the tree (`style`) or an ancestor.
+  Density (`--trees-item-height`, `--trees-density-override`) is set inline from
+  the `density` / `itemHeight` options.
+
+Shiki/VS Code themes map onto the `--trees-theme-*` tokens with
+`themeToTreeStyles` (uses `@pierre/theming`); the result is a Solid `style`
+object:
+
+```tsx
+import dracula from '@shikijs/themes/dracula';
+import { themeToTreeStyles } from 'solid-trees';
+
+<FileTree
+  model={tree}
+  style={{ height: '320px', ...themeToTreeStyles(dracula) }}
+/>;
+```
+
 ## Differences from `@pierre/trees`
 
-- No shadow DOM, custom element, SSR/hydration, `unsafeCSS`, or theming.
+- No shadow DOM, custom element, SSR/hydration, or `unsafeCSS`; use page CSS.
 - Header and context-menu content are Solid JSX (`header`, `renderContextMenu`
   props); `composition.contextMenu` keeps the behavior flags (`enabled`,
   `triggerMode`, `buttonVisibility`) and `onOpen`/`onClose`.
-- Unstyled. The DOM keeps upstream's data attributes (`data-type="item"`,
+- The DOM keeps upstream's data attributes (`data-type="item"`,
   `data-item-path`, `data-item-selected`, `data-item-focused`,
   `data-item-git-status`, `data-item-section`, `data-file-tree-sticky-row`, ...)
-  as styling hooks. Names render as `<span data-item-name>`; the focused row's
-  indent guides carry `data-item-guide-focused="true"`.
-- Only layout the virtualizer relies on ships, in `@layer solid-trees.structure`
-  (fixed-height flex rows, scroll container, sticky window and overlay,
-  context-menu layers). Unlayered CSS overrides it. Row height comes from
-  `--trees-item-height` (set from `density` / `itemHeight`); indent width from
-  `--trees-indent` (default `1em`).
-- Middle-truncation of long names (upstream `OverflowText`) is not ported; it is
-  a styling concern.
+  and name markup (`MiddleTruncate` / `Truncate`), so upstream CSS ports over.
+- Each tree prefixes the symbol ids of its sprite sheet (built-in set plus
+  `icons.spriteSheet`) so several trees in one document never resolve each
+  other's icons; names a sheet does not define resolve document-wide.
+- The scrollbar gutter (`--trees-scrollbar-gutter-measured`) is measured once
+  per document, not per tree.
+- `themeToTreeStyles` returns CSS property names (`background-color`), not
+  React's camelCase.
 
 ## License
 

@@ -4,6 +4,7 @@ import {
   createEffect,
   createMemo,
   createSignal,
+  createUniqueId,
   For,
   omit,
   onCleanup,
@@ -15,7 +16,10 @@ import {
   getBuiltInSpriteSheet,
   isColoredBuiltInIconSet,
 } from '../builtInIcons';
-import { CONTEXT_MENU_TRIGGER_TYPE } from '../constants';
+import {
+  CONTEXT_MENU_TRIGGER_TYPE,
+  FILE_TREE_SCROLLBAR_GUTTER_MEASURED_PROPERTY,
+} from '../constants';
 import { normalizeFileTreeIcons } from '../iconConfig';
 import { FILE_TREE_RENAME_VIEW } from '../model/FileTreeController';
 import { FILE_TREE_VIEW_STATE } from '../model/FileTreeModel';
@@ -43,12 +47,14 @@ import { classifyFileTreeRenameHandoff } from '../render/renameHandoff';
 import { computeFileTreeRowClickPlan } from '../render/rowClickPlan';
 import type { FileTreeRowClickMode } from '../render/rowClickPlan';
 import { isHTMLElement, isNode, isShadowRoot } from '../utils/domGuards';
+import { measureScrollbarGutter } from '../utils/scrollbarGutter';
 import { FileTreeRow } from './FileTreeRow';
 import type {
   FileTreeContextMenuConfig,
   FileTreeRowFrame,
 } from './FileTreeRow';
 import { Icon } from './Icon';
+import { IconHrefContext, scopeSpriteSheet } from './iconSprite';
 import { FILE_TREE_STRUCTURAL_CSS } from './structuralStyles';
 import {
   BLOCKED_CONTEXT_MENU_NAV_KEYS,
@@ -221,8 +227,9 @@ function blockEvent(event: Event): void {
 
 /**
  * Virtualized, keyboard-navigable file tree bound to a `FileTreeModel`. The
- * root needs a bounded height (e.g. `style={{ height: '320px' }}`); rows are
- * unstyled apart from the layout the virtualizer requires.
+ * root needs a bounded height (e.g. `style={{ height: '320px' }}`). Only the
+ * layout the rows depend on is built in; import `solid-trees/styles.css` for
+ * the visual styles.
  */
 export function FileTree(props: FileTreeProps): JSX.Element {
   // Each model gets its own view instance; swapping models remounts.
@@ -439,9 +446,22 @@ function FileTreeView(props: {
   const resolveIcon = createMemo(
     () => createFileTreeIconResolver(icons()).resolveIcon
   );
-  const spriteSheetHtml = createMemo(
-    () =>
-      `${getBuiltInSpriteSheet(normalizedIcons().set)}${normalizedIcons().spriteSheet?.trim() ?? ''}`
+  // Symbol ids are prefixed per view so several trees in one document never
+  // resolve each other's sprites.
+  const spriteIdPrefix = `ft-${createUniqueId()}__`;
+  const spriteSheet = createMemo(() =>
+    scopeSpriteSheet(
+      `${getBuiltInSpriteSheet(normalizedIcons().set)}${normalizedIcons().spriteSheet?.trim() ?? ''}`,
+      spriteIdPrefix
+    )
+  );
+  const iconHref = (name: string): string => {
+    const id = name.replace(/^#/, '');
+    return spriteSheet().ids.has(id) ? `#${spriteIdPrefix}${id}` : `#${id}`;
+  };
+  // Published on the root for the stylesheet's scroll padding formula.
+  const [scrollbarGutter, setScrollbarGutter] = createSignal<number | null>(
+    null
   );
 
   const layoutSnapshot = () => layoutState().snapshot;
@@ -732,14 +752,11 @@ function FileTreeView(props: {
     dragPoint = null;
   };
 
+  // Mount inside the tree root (as upstream mounts inside its shadow root) so
+  // the preview keeps the tree's tokens and scoped styles. It is fixed
+  // positioned, so the root's overflow clipping does not apply.
   const mountDragPreview = (preview: HTMLElement): void => {
-    const rootNode = rootElement?.getRootNode();
-    if (isShadowRoot(rootNode)) {
-      rootNode.append(preview);
-      return;
-    }
-
-    document.body.append(preview);
+    (rootElement ?? document.body).append(preview);
   };
 
   const clearTouchDragResources = (): void => {
@@ -1532,6 +1549,7 @@ function FileTreeView(props: {
       scroll,
       initialViewportHeight
     );
+    setScrollbarGutter(measureScrollbarGutter(root));
 
     const update = (): void => {
       const nextViewportHeight = getCachedViewportHeight(
@@ -2415,293 +2433,297 @@ function FileTreeView(props: {
   };
 
   return (
-    <div
-      {...hostProps}
-      ref={(element) => {
-        rootElement = element;
-      }}
-      id={treeDomId}
-      role="tree"
-      tabindex={-1}
-      style={{
-        '--trees-item-height': `${itemHeight}px`,
-        '--trees-density-override': String(density.factor),
-        ...props.host.style,
-      }}
-      data-file-tree-virtualized-root="true"
-      data-file-tree-colored-icons={
-        normalizedIcons().colored &&
-        isColoredBuiltInIconSet(normalizedIcons().set)
-          ? 'true'
-          : undefined
-      }
-      data-file-tree-context-menu-button-visibility={
-        contextMenu().enabled && contextMenu().buttonTriggerEnabled
-          ? contextMenu().buttonVisibility
-          : undefined
-      }
-      data-file-tree-context-menu-trigger-mode={
-        contextMenu().enabled ? contextMenu().triggerMode : undefined
-      }
-      data-file-tree-has-context-menu-action-lane={
-        contextMenu().enabled && contextMenu().buttonTriggerEnabled
-          ? 'true'
-          : undefined
-      }
-      data-file-tree-has-git-lane={
-        gitStatusState() !== null ? 'true' : undefined
-      }
-      onKeyDown={handleTreeKeyDown}
-      onPointerOver={handleTreePointerOver}
-      onPointerLeave={() => {
-        setContextHoverPath(null);
-      }}
-      onDragOver={handleTreeDragOver}
-      onDragLeave={handleTreeDragLeave}
-      onDrop={handleTreeDrop}
-    >
-      <style data-file-tree-structure>{FILE_TREE_STRUCTURAL_CSS}</style>
+    <IconHrefContext value={iconHref}>
       <div
-        data-file-tree-sprite
-        aria-hidden="true"
-        innerHTML={spriteSheetHtml()}
-      />
-      <Show when={header.toArray().length > 0}>
-        <div data-type="header-slot">{header()}</div>
-      </Show>
-      <Show when={searchEnabled}>
-        <div
-          data-file-tree-search-container
-          data-open={isSearchOpen() ? 'true' : 'false'}
-        >
-          <input
-            ref={(element) => {
-              searchInputElement = element;
-            }}
-            aria-activedescendant={activeDescendantId()}
-            aria-controls={treeDomId}
-            placeholder={labels().searchPlaceholder}
-            data-file-tree-search-input
-            data-file-tree-search-input-fake-focus={
-              fakeSearchFocusActive() ? 'true' : undefined
-            }
-            value={searchValue()}
-            onBlur={() => {
-              // With `retain`, ignore blurs before the user engaged with the
-              // input (typically mount-time focus churn between trees).
-              if (
-                searchBlurBehavior === 'retain' &&
-                !searchInputUserInteracted
-              ) {
-                return;
-              }
-              controller.closeSearch();
-            }}
-            onFocus={markSearchInputInteracted}
-            onPointerDown={markSearchInputInteracted}
-            onInput={(event) => {
-              markSearchInputInteracted();
-              controller.setSearch(event.currentTarget.value);
-            }}
-          />
-        </div>
-      </Show>
-      <div
+        {...hostProps}
         ref={(element) => {
-          scrollElement = element;
+          rootElement = element;
         }}
-        data-file-tree-virtualized-scroll="true"
+        id={treeDomId}
+        role="tree"
+        tabindex={-1}
+        style={{
+          '--trees-item-height': `${itemHeight}px`,
+          '--trees-density-override': String(density.factor),
+          [FILE_TREE_SCROLLBAR_GUTTER_MEASURED_PROPERTY]:
+            scrollbarGutter() === null ? undefined : `${scrollbarGutter()}px`,
+          ...props.host.style,
+        }}
+        data-file-tree-virtualized-root="true"
+        data-file-tree-colored-icons={
+          normalizedIcons().colored &&
+          isColoredBuiltInIconSet(normalizedIcons().set)
+            ? 'true'
+            : undefined
+        }
+        data-file-tree-context-menu-button-visibility={
+          contextMenu().enabled && contextMenu().buttonTriggerEnabled
+            ? contextMenu().buttonVisibility
+            : undefined
+        }
+        data-file-tree-context-menu-trigger-mode={
+          contextMenu().enabled ? contextMenu().triggerMode : undefined
+        }
+        data-file-tree-has-context-menu-action-lane={
+          contextMenu().enabled && contextMenu().buttonTriggerEnabled
+            ? 'true'
+            : undefined
+        }
+        data-file-tree-has-git-lane={
+          gitStatusState() !== null ? 'true' : undefined
+        }
+        onKeyDown={handleTreeKeyDown}
+        onPointerOver={handleTreePointerOver}
+        onPointerLeave={() => {
+          setContextHoverPath(null);
+        }}
+        onDragOver={handleTreeDragOver}
+        onDragLeave={handleTreeDragLeave}
+        onDrop={handleTreeDrop}
       >
-        <Show when={stickyFolders && stickyOverlayRows().length > 0}>
-          <div aria-hidden="true" data-file-tree-sticky-overlay="true">
-            <div
-              data-file-tree-sticky-overlay-content="true"
-              style={{ height: `${layoutState().overlayHeight}px` }}
-            >
-              <For
-                each={stickyOverlayRows()}
-                keyed={(entry) => getFileTreeRowPath(entry.row)}
-              >
-                {(entry, index) => (
-                  <FileTreeRow
-                    frame={frame}
-                    row={entry().row}
-                    mode="sticky"
-                    registerButton={registerStickyRow}
-                    style={{
-                      left: '0',
-                      position: 'absolute',
-                      right: '0',
-                      top: `${entry().top}px`,
-                      'z-index': `${stickyOverlayRows().length - index()}`,
-                    }}
-                  />
-                )}
-              </For>
-            </div>
+        <style data-file-tree-structure>{FILE_TREE_STRUCTURAL_CSS}</style>
+        <div
+          data-file-tree-sprite={spriteIdPrefix}
+          aria-hidden="true"
+          innerHTML={spriteSheet().html}
+        />
+        <Show when={header.toArray().length > 0}>
+          <div data-type="header-slot">{header()}</div>
+        </Show>
+        <Show when={searchEnabled}>
+          <div
+            data-file-tree-search-container
+            data-open={isSearchOpen() ? 'true' : 'false'}
+          >
+            <input
+              ref={(element) => {
+                searchInputElement = element;
+              }}
+              aria-activedescendant={activeDescendantId()}
+              aria-controls={treeDomId}
+              placeholder={labels().searchPlaceholder}
+              data-file-tree-search-input
+              data-file-tree-search-input-fake-focus={
+                fakeSearchFocusActive() ? 'true' : undefined
+              }
+              value={searchValue()}
+              onBlur={() => {
+                // With `retain`, ignore blurs before the user engaged with the
+                // input (typically mount-time focus churn between trees).
+                if (
+                  searchBlurBehavior === 'retain' &&
+                  !searchInputUserInteracted
+                ) {
+                  return;
+                }
+                controller.closeSearch();
+              }}
+              onFocus={markSearchInputInteracted}
+              onPointerDown={markSearchInputInteracted}
+              onInput={(event) => {
+                markSearchInputInteracted();
+                controller.setSearch(event.currentTarget.value);
+              }}
+            />
           </div>
         </Show>
         <div
           ref={(element) => {
-            listElement = element;
+            scrollElement = element;
           }}
-          data-file-tree-virtualized-list="true"
-          style={{ height: `${totalScrollableHeight()}px` }}
+          data-file-tree-virtualized-scroll="true"
         >
+          <Show when={stickyFolders && stickyOverlayRows().length > 0}>
+            <div aria-hidden="true" data-file-tree-sticky-overlay="true">
+              <div
+                data-file-tree-sticky-overlay-content="true"
+                style={{ height: `${layoutState().overlayHeight}px` }}
+              >
+                <For
+                  each={stickyOverlayRows()}
+                  keyed={(entry) => getFileTreeRowPath(entry.row)}
+                >
+                  {(entry, index) => (
+                    <FileTreeRow
+                      frame={frame}
+                      row={entry().row}
+                      mode="sticky"
+                      registerButton={registerStickyRow}
+                      style={{
+                        left: '0',
+                        position: 'absolute',
+                        right: '0',
+                        top: `${entry().top}px`,
+                        'z-index': `${stickyOverlayRows().length - index()}`,
+                      }}
+                    />
+                  )}
+                </For>
+              </div>
+            </div>
+          </Show>
           <div
-            data-file-tree-virtualized-sticky-offset="true"
-            aria-hidden="true"
-            style={{ height: `${layoutSnapshot().window.offsetTop}px` }}
-          />
-          <div
-            data-file-tree-virtualized-sticky="true"
-            style={{
-              height: `${layoutSnapshot().window.height}px`,
-              // A negative inset lets the overscanned window hang past the
-              // viewport without pinning during normal scrolling, while still
-              // catching it when rendering falls behind a fast scroll. The
-              // bottom edge allows for the sticky overlay height.
-              top: `${Math.min(0, resolvedViewportHeight() - layoutSnapshot().window.height)}px`,
-              bottom: `${Math.min(0, resolvedViewportHeight() - layoutSnapshot().window.height - stickyOverlayHeight())}px`,
+            ref={(element) => {
+              listElement = element;
             }}
+            data-file-tree-virtualized-list="true"
+            style={{ height: `${totalScrollableHeight()}px` }}
           >
-            <For each={windowRows()} keyed={(entry) => entry.key}>
-              {(entry) => (
-                <FileTreeRow
-                  frame={frame}
-                  row={entry().row}
-                  mode="flow"
-                  registerButton={registerFlowRow}
-                />
-              )}
-            </For>
-            <Show when={parkedFocusedRow()}>
-              {(parked) => (
-                <FileTreeRow
-                  frame={frame}
-                  row={parked().row}
-                  mode="flow"
-                  isParked
-                  registerButton={registerFlowRow}
-                  style={{
-                    left: '0',
-                    opacity: '0',
-                    'pointer-events':
-                      dragSession()?.primaryPath === parked().row.path
-                        ? 'none'
-                        : undefined,
-                    position: 'absolute',
-                    right: '0',
-                    top: `${parked().offset}px`,
+            <div
+              data-file-tree-virtualized-sticky-offset="true"
+              aria-hidden="true"
+              style={{ height: `${layoutSnapshot().window.offsetTop}px` }}
+            />
+            <div
+              data-file-tree-virtualized-sticky="true"
+              style={{
+                height: `${layoutSnapshot().window.height}px`,
+                // A negative inset lets the overscanned window hang past the
+                // viewport without pinning during normal scrolling, while still
+                // catching it when rendering falls behind a fast scroll. The
+                // bottom edge allows for the sticky overlay height.
+                top: `${Math.min(0, resolvedViewportHeight() - layoutSnapshot().window.height)}px`,
+                bottom: `${Math.min(0, resolvedViewportHeight() - layoutSnapshot().window.height - stickyOverlayHeight())}px`,
+              }}
+            >
+              <For each={windowRows()} keyed={(entry) => entry.key}>
+                {(entry) => (
+                  <FileTreeRow
+                    frame={frame}
+                    row={entry().row}
+                    mode="flow"
+                    registerButton={registerFlowRow}
+                  />
+                )}
+              </For>
+              <Show when={parkedFocusedRow()}>
+                {(parked) => (
+                  <FileTreeRow
+                    frame={frame}
+                    row={parked().row}
+                    mode="flow"
+                    isParked
+                    registerButton={registerFlowRow}
+                    style={{
+                      left: '0',
+                      opacity: '0',
+                      'pointer-events':
+                        dragSession()?.primaryPath === parked().row.path
+                          ? 'none'
+                          : undefined,
+                      position: 'absolute',
+                      right: '0',
+                      top: `${parked().offset}px`,
+                    }}
+                  />
+                )}
+              </Show>
+              <Show when={parkedDraggedRow()}>
+                {(parked) => (
+                  <FileTreeRow
+                    frame={frame}
+                    row={parked().row}
+                    mode="flow"
+                    isParked
+                    registerButton={registerFlowRow}
+                    style={{
+                      left: '0',
+                      opacity: '0',
+                      'pointer-events': 'none',
+                      position: 'absolute',
+                      right: '0',
+                      top: `${parked().offset}px`,
+                    }}
+                  />
+                )}
+              </Show>
+            </div>
+          </div>
+        </div>
+        <Show when={contextMenu().enabled}>
+          <div
+            ref={(element) => {
+              contextMenuAnchorElement = element;
+            }}
+            data-type="context-menu-anchor"
+            data-visible={
+              triggerButtonVisible() || contextMenuState() !== null
+                ? 'true'
+                : 'false'
+            }
+            style={contextMenuAnchorStyle()}
+          >
+            <button
+              ref={(element) => {
+                contextMenuTriggerElement = element;
+              }}
+              type="button"
+              data-type={CONTEXT_MENU_TRIGGER_TYPE}
+              aria-label={labels().contextMenuTrigger}
+              aria-haspopup="menu"
+              aria-expanded={contextMenuState() !== null ? 'true' : 'false'}
+              data-visible={triggerButtonVisible() ? 'true' : 'false'}
+              tabindex={-1}
+              style={
+                contextMenuState()?.source === 'right-click'
+                  ? { opacity: '0' }
+                  : undefined
+              }
+              onMouseDown={(event) => {
+                event.preventDefault();
+              }}
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                if (currentContextMenuState !== null) {
+                  closeContextMenu();
+                  return;
+                }
+
+                openMenuFromTrigger();
+              }}
+            >
+              <Icon {...resolveIcon()('file-tree-icon-ellipsis')} />
+            </button>
+            <Show when={openContextMenu()} keyed>
+              {(menu) => (
+                <div
+                  ref={(element) => {
+                    contextMenuContentElement = element;
                   }}
-                />
-              )}
-            </Show>
-            <Show when={parkedDraggedRow()}>
-              {(parked) => (
-                <FileTreeRow
-                  frame={frame}
-                  row={parked().row}
-                  mode="flow"
-                  isParked
-                  registerButton={registerFlowRow}
-                  style={{
-                    left: '0',
-                    opacity: '0',
-                    'pointer-events': 'none',
-                    position: 'absolute',
-                    right: '0',
-                    top: `${parked().offset}px`,
-                  }}
-                />
+                  data-type="context-menu-slot"
+                >
+                  {props.host.renderContextMenu?.(menu.item, menu.context)}
+                </div>
               )}
             </Show>
           </div>
-        </div>
-      </div>
-      <Show when={contextMenu().enabled}>
-        <div
-          ref={(element) => {
-            contextMenuAnchorElement = element;
-          }}
-          data-type="context-menu-anchor"
-          data-visible={
-            triggerButtonVisible() || contextMenuState() !== null
-              ? 'true'
-              : 'false'
-          }
-          style={contextMenuAnchorStyle()}
-        >
-          <button
+        </Show>
+        <Show when={contextMenuState() !== null}>
+          <div
+            data-type="context-menu-wash"
+            aria-hidden="true"
             ref={(element) => {
-              contextMenuTriggerElement = element;
-            }}
-            type="button"
-            data-type={CONTEXT_MENU_TRIGGER_TYPE}
-            aria-label={labels().contextMenuTrigger}
-            aria-haspopup="menu"
-            aria-expanded={contextMenuState() !== null ? 'true' : 'false'}
-            data-visible={triggerButtonVisible() ? 'true' : 'false'}
-            tabindex={-1}
-            style={
-              contextMenuState()?.source === 'right-click'
-                ? { opacity: '0' }
-                : undefined
-            }
-            onMouseDown={(event) => {
-              event.preventDefault();
-            }}
-            onClick={(event) => {
-              event.preventDefault();
-              event.stopPropagation();
-              if (currentContextMenuState !== null) {
+              element.addEventListener('mousedown', (event) => {
+                event.preventDefault();
                 closeContextMenu();
-                return;
-              }
-
-              openMenuFromTrigger();
+              });
+              element.addEventListener(
+                'touchstart',
+                (event) => {
+                  blockEvent(event);
+                  closeContextMenu();
+                },
+                { passive: false }
+              );
+              element.addEventListener('touchmove', blockEvent, {
+                passive: false,
+              });
+              element.addEventListener('wheel', blockEvent, { passive: false });
             }}
-          >
-            <Icon {...resolveIcon()('file-tree-icon-ellipsis')} />
-          </button>
-          <Show when={openContextMenu()} keyed>
-            {(menu) => (
-              <div
-                ref={(element) => {
-                  contextMenuContentElement = element;
-                }}
-                data-type="context-menu-slot"
-              >
-                {props.host.renderContextMenu?.(menu.item, menu.context)}
-              </div>
-            )}
-          </Show>
-        </div>
-      </Show>
-      <Show when={contextMenuState() !== null}>
-        <div
-          data-type="context-menu-wash"
-          aria-hidden="true"
-          ref={(element) => {
-            element.addEventListener('mousedown', (event) => {
-              event.preventDefault();
-              closeContextMenu();
-            });
-            element.addEventListener(
-              'touchstart',
-              (event) => {
-                blockEvent(event);
-                closeContextMenu();
-              },
-              { passive: false }
-            );
-            element.addEventListener('touchmove', blockEvent, {
-              passive: false,
-            });
-            element.addEventListener('wheel', blockEvent, { passive: false });
-          }}
-        />
-      </Show>
-    </div>
+          />
+        </Show>
+      </div>
+    </IconHrefContext>
   );
 }

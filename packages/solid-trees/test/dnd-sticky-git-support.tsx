@@ -119,6 +119,28 @@ export function getNormalizedText(element: Element | null | undefined): string {
   return element?.textContent?.replaceAll(/\s+/g, ' ').trim() ?? '';
 }
 
+// Each tree prefixes the symbol ids in its own sprite sheet. Resolves the
+// `<use href>` inside `element` against this tree's sprite and returns the
+// unprefixed symbol name, or the raw href target when the name is not one of
+// the tree's symbols (it then resolves document-wide).
+export function getIconSymbolName(
+  root: HTMLElement,
+  element: Element | null | undefined
+): string | null {
+  const href = element?.querySelector('use')?.getAttribute('href');
+  if (href === undefined || href === null) {
+    return null;
+  }
+
+  const sprite = root.querySelector('[data-file-tree-sprite]');
+  const prefix = sprite?.getAttribute('data-file-tree-sprite') ?? '';
+  const id = href.slice(1);
+  const isTreeSymbol = Array.from(
+    sprite?.querySelectorAll('symbol') ?? []
+  ).some((symbol) => symbol.getAttribute('id') === id);
+  return isTreeSymbol && id.startsWith(prefix) ? id.slice(prefix.length) : id;
+}
+
 export function getRowSectionOrder(button: HTMLElement): Array<string> {
   return Array.from(button.children)
     .map((child) => child.getAttribute('data-item-section'))

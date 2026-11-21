@@ -17,6 +17,7 @@ import type { FileTreeResolveIcon } from '../render/iconResolver';
 import { computeFileTreeRowElementAttributes } from '../render/rowAttributes';
 import type { FileTreeRowClickMode } from '../render/rowClickPlan';
 import { Icon } from './Icon';
+import { MiddleTruncate, Truncate } from './OverflowText';
 import {
   createAnchorRectFromPoint,
   getBuiltInGitStatusDecoration,
@@ -397,7 +398,11 @@ export function FileTreeRow(props: FileTreeRowProps): JSX.Element {
   const name = () => (
     <Show
       when={view().showRenameInput}
-      fallback={<span data-item-name>{props.row.name}</span>}
+      fallback={
+        <MiddleTruncate minimumLength={5} split="extension">
+          {props.row.name}
+        </MiddleTruncate>
+      }
     >
       {renameInput()}
     </Show>
@@ -448,7 +453,7 @@ export function FileTreeRow(props: FileTreeRowProps): JSX.Element {
                         index() === flattenedSegments().length - 1 &&
                         view().showRenameInput
                       }
-                      fallback={<span data-item-name>{segment().name}</span>}
+                      fallback={<Truncate>{segment().name}</Truncate>}
                     >
                       {renameInput()}
                     </Show>

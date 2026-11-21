@@ -9,6 +9,7 @@ import type { GitStatusEntry } from '../src/publicTypes';
 import { isHTMLElementOfTag } from '../src/utils/domGuards';
 import {
   flushDom,
+  getIconSymbolName,
   getScrollElement,
   renderFileTree,
 } from './dnd-sticky-git-support';
@@ -295,9 +296,7 @@ describe('file-tree git status', () => {
     );
     expect(dotIcon?.getAttribute('width')).toBe('6');
     expect(dotIcon?.getAttribute('height')).toBe('6');
-    expect(dotIcon?.querySelector('use')?.getAttribute('href')).toBe(
-      '#pst-test-dot'
-    );
+    expect(getIconSymbolName(root, dotIcon)).toBe('pst-test-dot');
   });
 
   // Upstream asserts the `[data-file-tree-virtualized-wrapper]` element is

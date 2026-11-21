@@ -8,6 +8,8 @@
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
+    "@pierre/theme": "~2.0.0",
+    "@shikijs/themes": "^4.6.0",
     "@solidjs/web": "^2.0.3",
     "solid-js": "^2.0.3",
     "solid-trees": "workspace:*"

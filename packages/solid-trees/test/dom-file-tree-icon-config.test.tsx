@@ -2,7 +2,11 @@ import { afterEach, describe, expect, test } from 'vitest';
 
 import type { FileTreeOptions } from '../src/model/publicTypes';
 import { isHTMLElementOfTag } from '../src/utils/domGuards';
-import { flushDom, renderFileTree } from './dnd-sticky-git-support';
+import {
+  flushDom,
+  getIconSymbolName,
+  renderFileTree,
+} from './dnd-sticky-git-support';
 import type { RenderedTree } from './dnd-sticky-git-support';
 
 let rendered: RenderedTree | null = null;
@@ -29,6 +33,23 @@ const GENERIC_FILE_SPRITE =
   '<svg data-icon-sprite aria-hidden="true" width="0" height="0"><symbol id="pst-test-generic-file" viewBox="0 0 16 16"><rect width="16" height="16" fill="currentColor" /></symbol></svg>';
 const README_SPRITE =
   '<svg data-icon-sprite aria-hidden="true" width="0" height="0"><symbol id="pst-test-readme" viewBox="0 0 16 16"><circle cx="8" cy="8" r="7" fill="currentColor" /></symbol></svg>';
+
+// Two trees whose custom sheets define the same symbol id with different art.
+function collidingSpriteOptions(
+  shape: string,
+  set: 'minimal' | 'complete'
+): FileTreeOptions {
+  return {
+    icons: {
+      set,
+      byFileName: { 'readme.md': 'pst-test-shared' },
+      spriteSheet: `<svg data-icon-sprite aria-hidden="true" width="0" height="0"><symbol id="pst-test-shared" viewBox="0 0 16 16">${shape}</symbol></svg>`,
+    },
+    initialExpansion: 'open',
+    paths: ['README.md', 'src/index.ts'],
+    initialVisibleRowCount: 120 / 30,
+  };
+}
 
 describe('file-tree icon config', () => {
   // Upstream: "preloadFileTree includes custom sprite sheets and colored icon
@@ -66,9 +87,8 @@ describe('file-tree icon config', () => {
     });
 
     const readmeButton = getItemButton(root, 'README.md');
-    const href = readmeButton.querySelector('use')?.getAttribute('href');
 
-    expect(href).toBe('#pst-test-readme');
+    expect(getIconSymbolName(root, readmeButton)).toBe('pst-test-readme');
   });
 
   test('falls back to built-in file icon tiers when overrides are absent', async () => {
@@ -80,9 +100,9 @@ describe('file-tree icon config', () => {
     });
 
     const readmeButton = getItemButton(root, 'README.md');
-    const href = readmeButton.querySelector('use')?.getAttribute('href') ?? '';
+    const symbolName = getIconSymbolName(root, readmeButton) ?? '';
 
-    expect(href.startsWith('#file-tree-builtin-')).toBe(true);
+    expect(symbolName.startsWith('file-tree-builtin-')).toBe(true);
   });
 
   test('remap[file-tree-icon-file] overrides the default built-in fallback when set is complete', async () => {
@@ -103,15 +123,15 @@ describe('file-tree icon config', () => {
     // Unknown extension has no specific built-in token — remap should win
     // over the generic 'default' fallback.
     const unknownButton = getItemButton(root, 'unknown.xyz');
-    expect(unknownButton.querySelector('use')?.getAttribute('href')).toBe(
-      '#pst-test-generic-file'
+    expect(getIconSymbolName(root, unknownButton)).toBe(
+      'pst-test-generic-file'
     );
 
     // Known extension has a specific built-in token — remap must not
     // override it.
     const tsButton = getItemButton(root, 'src/index.ts');
-    expect(tsButton.querySelector('use')?.getAttribute('href')).toBe(
-      '#file-tree-builtin-typescript'
+    expect(getIconSymbolName(root, tsButton)).toBe(
+      'file-tree-builtin-typescript'
     );
   });
 
@@ -133,14 +153,14 @@ describe('file-tree icon config', () => {
     // Unknown extension resolves to the generic 'default' token in the
     // standard tier as well — remap must win over that placeholder.
     const unknownButton = getItemButton(root, 'unknown.xyz');
-    expect(unknownButton.querySelector('use')?.getAttribute('href')).toBe(
-      '#pst-test-generic-file'
+    expect(getIconSymbolName(root, unknownButton)).toBe(
+      'pst-test-generic-file'
     );
 
     // A known standard-tier extension keeps its specific built-in token.
     const tsButton = getItemButton(root, 'src/index.ts');
-    expect(tsButton.querySelector('use')?.getAttribute('href')).toBe(
-      '#file-tree-builtin-typescript'
+    expect(getIconSymbolName(root, tsButton)).toBe(
+      'file-tree-builtin-typescript'
     );
   });
 
@@ -162,14 +182,12 @@ describe('file-tree icon config', () => {
     // The minimal set never resolves a built-in file token, so every file
     // falls through to remap['file-tree-icon-file'].
     const unknownButton = getItemButton(root, 'unknown.xyz');
-    expect(unknownButton.querySelector('use')?.getAttribute('href')).toBe(
-      '#pst-test-generic-file'
+    expect(getIconSymbolName(root, unknownButton)).toBe(
+      'pst-test-generic-file'
     );
 
     const tsButton = getItemButton(root, 'src/index.ts');
-    expect(tsButton.querySelector('use')?.getAttribute('href')).toBe(
-      '#pst-test-generic-file'
-    );
+    expect(getIconSymbolName(root, tsButton)).toBe('pst-test-generic-file');
   });
 
   test('setIcons swaps icon modes without resetting expanded state', async () => {
@@ -206,9 +224,7 @@ describe('file-tree icon config', () => {
     expect(root.querySelector('[data-item-path="src/index.ts"]')).toBeNull();
 
     const readmeButton = getItemButton(root, 'README.md');
-    expect(readmeButton.querySelector('use')?.getAttribute('href')).toBe(
-      '#pst-test-readme'
-    );
+    expect(getIconSymbolName(root, readmeButton)).toBe('pst-test-readme');
   });
 
   // Upstream: "hydrate reuses the existing SSR wrapper when the tree id
@@ -230,5 +246,44 @@ describe('file-tree icon config', () => {
     expect(root.querySelectorAll('[data-item-path="README.md"]').length).toBe(
       1
     );
+  });
+
+  // Light DOM: every tree mounts its sprite into the same document id
+  // namespace, so trees with different sheets must not share symbol ids.
+  test('trees with conflicting sprite sheets resolve their own symbols', async () => {
+    const first = await render(
+      collidingSpriteOptions('<rect width="16" height="16" />', 'minimal')
+    );
+    const second = await renderFileTree(
+      collidingSpriteOptions('<circle cx="8" cy="8" r="7" />', 'complete')
+    );
+
+    try {
+      for (const [tree, shape] of [
+        [first, 'rect'],
+        [second, 'circle'],
+      ] as const) {
+        const href =
+          getItemButton(tree.root, 'README.md')
+            .querySelector('use')
+            ?.getAttribute('href') ?? '';
+        const symbol = document.getElementById(href.slice(1));
+        expect(symbol?.closest('[data-file-tree-virtualized-root]')).toBe(
+          tree.root
+        );
+        expect(symbol?.querySelector(shape)).not.toBeNull();
+        expect(
+          getIconSymbolName(tree.root, getItemButton(tree.root, 'README.md'))
+        ).toBe('pst-test-shared');
+      }
+
+      const symbolIds = Array.from(
+        document.querySelectorAll('[data-file-tree-sprite] symbol'),
+        (symbol) => symbol.getAttribute('id')
+      );
+      expect(new Set(symbolIds).size).toBe(symbolIds.length);
+    } finally {
+      second.cleanup();
+    }
   });
 });

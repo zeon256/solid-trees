@@ -28,6 +28,11 @@ export type {
 } from './iconConfig';
 export { getBuiltInSpriteSheet } from './builtInIcons';
 export { createFileTreeIconResolver } from './render/iconResolver';
+export type {
+  TreeThemeInput,
+  TreeThemeStyles,
+} from './utils/themeToTreeStyles';
+export { themeToTreeStyles } from './utils/themeToTreeStyles';
 export { DEFAULT_FILE_TREE_LABELS } from './utils/fileTreeLabels';
 export type { FileTreePreparedInput } from './preparedInput';
 export {
