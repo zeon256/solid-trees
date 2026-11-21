@@ -2,7 +2,18 @@
   "name": "solid-trees",
   "version": "0.0.0",
   "private": true,
+  "description": "SolidJS 2 port of @pierre/trees: a virtualized, path-first file tree.",
   "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zeon256/solid-trees.git",
+    "directory": "packages/solid-trees"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true,
+    "registry": "https://registry.npmjs.org/"
+  },
   "type": "module",
   "sideEffects": [
     "*.css"
@@ -12,6 +23,7 @@
     "./styles.css": "./src/styles.css"
   },
   "scripts": {
+    "build": "vite build",
     "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json"
   },
@@ -27,8 +39,9 @@
     "@solidjs/vite-plugin": "^3.0.1",
     "@solidjs/web": "^2.0.3",
     "jsdom": "^26.1.0",
+    "rolldown-plugin-dts": "^0.30.2",
     "solid-js": "^2.0.3",
-    "typescript": "7.0.2",
+    "typescript": "7.1.0-beta",
     "vite": "^8.1.0",
     "vitest": "^5.1.1"
   }

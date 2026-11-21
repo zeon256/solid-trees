@@ -147,7 +147,10 @@ export const splitLeafPath: CustomSplitFn = (contents) => {
   );
 };
 
-export const splitByIndex: CustomSplitFn = (contents, { splitIndex } = {}) =>
+export const splitByIndex: CustomSplitFn = (
+  contents,
+  { splitIndex }: MiddleTruncateFilteredProps = {}
+) =>
   splitAt(
     contents,
     typeof splitIndex === 'number' ? splitIndex : Math.ceil(contents.length / 2)
@@ -161,7 +164,10 @@ const isValidSplitOffset = (
   splitOffset > 0 &&
   splitOffset < contents.length;
 
-export const splitLast: CustomSplitFn = (contents, { splitOffset } = {}) =>
+export const splitLast: CustomSplitFn = (
+  contents,
+  { splitOffset }: MiddleTruncateFilteredProps = {}
+) =>
   // Fall back to a center split when the offset is not valid.
   splitAt(
     contents,
@@ -170,7 +176,10 @@ export const splitLast: CustomSplitFn = (contents, { splitOffset } = {}) =>
       : Math.ceil(contents.length / 2)
   );
 
-export const splitFirst: CustomSplitFn = (contents, { splitOffset } = {}) =>
+export const splitFirst: CustomSplitFn = (
+  contents,
+  { splitOffset }: MiddleTruncateFilteredProps = {}
+) =>
   // Fall back to a center split when the offset is not valid.
   splitAt(
     contents,
