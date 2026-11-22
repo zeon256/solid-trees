@@ -9,6 +9,11 @@ export default defineConfig({
   ...cloudflare,
   plugins: cloudflare.plugins?.filter((plugin) => plugin !== 'react'),
   ignorePatterns: [...(cloudflare.ignorePatterns ?? []), '**/dist/**'],
+  overrides: [
+    ...(cloudflare.overrides ?? []),
+    // Astro injects `Astro` into component frontmatter.
+    { files: ['**/*.astro'], globals: { Astro: 'readonly' } },
+  ],
   rules: Object.fromEntries(
     Object.entries(cloudflare.rules ?? {}).filter(
       ([rule]) => !isReactRule(rule)
