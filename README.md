@@ -1,34 +1,58 @@
+![solid-trees](https://assets.solidjs.com/banner?project=solid-trees&type=Ecosystem&version=2.0)
+
+<p align="left">
+	<a href="https://oxc.rs"><img alt="Linted with oxlint" src="https://img.shields.io/badge/linted_with-oxlint-32f3e9?style=flat"></a>
+	<a href="https://github.com/zeon256/solid-trees/actions/workflows/build-release.yml"><img alt="CI/CD" src="https://github.com/zeon256/solid-trees/actions/workflows/build-release.yml/badge.svg"></a>
+	<a href="./LICENSE"><img alt="License: Apache-2.0" src="https://img.shields.io/badge/license-Apache--2.0-blue?style=flat"></a>
+	<img alt="NPM Version" src="https://img.shields.io/npm/v/solid-trees">
+	<img alt="GitHub Actions SHA Pinned" src="https://img.shields.io/badge/SHA_Pinned-Actions-blue?style=flat&logo=githubactions">
+	<img alt="NPM Provenance" src="https://img.shields.io/badge/NPM-Provenance-blue?style=flat&logo=npm">
+</p>
+
 # solid-trees
 
-SolidJS 2 port of [`@pierre/trees`](https://trees.software) — a virtualized,
-path-first file tree. The model layer (path store, controller, focus, selection,
-search, rename, drag and drop, git status) is vendored from upstream; the view
-is a native Solid 2 rewrite of upstream's Preact `FileTreeView`, rendered into
-the light DOM, with upstream's visual styles shipped as an importable
-stylesheet.
+> Virtualized, path-first file tree for SolidJS 2
 
-## Workspace
+SolidJS 2 port of [`@pierre/trees`](https://trees.software). The model layer
+(path store, controller, focus, selection, search, rename, drag and drop, git
+status) is vendored from upstream; the view is a native Solid 2 rewrite of
+upstream's Preact `FileTreeView`, rendered into the light DOM, with upstream's
+visual styles shipped as an importable stylesheet.
 
-| Path                   | Contents                                                    |
-| ---------------------- | ----------------------------------------------------------- |
-| `packages/path-store`  | Upstream `@pierre/path-store`, vendored verbatim (private). |
-| `packages/solid-trees` | The library: model, Solid view, primitives.                 |
-| `apps/playground`      | Astro demo site (`pnpm dev`).                               |
+## Features
 
-```sh
-pnpm install
-pnpm dev        # playground on http://localhost:4321
-pnpm test       # vitest + jsdom
-pnpm typecheck
-pnpm build      # library to packages/solid-trees/dist, playground to apps/playground/dist
+- Virtualized rendering, built for large trees
+- Path-first model: feed it a list of paths, get a tree
+- Focus, multi-selection, and keyboard navigation
+- Built-in search, inline rename, and drag and drop
+- Git status decorations
+- Sticky folders and flattened empty directories
+- Custom icons, labels, header, and context menu (Solid JSX)
+- Upstream's visual styles, tokens, and layers, themable with Shiki/VS Code themes
+- Light DOM only: style it with plain page CSS
+
+## Users
+
+- [live-preview.inve.rs](https://live-preview.inve.rs "live-preview") ([solid-markdown-wasm](https://github.com/zeon256/solid-markdown-wasm "solid-markdown-wasm"))
+- Using this project and want your company/project here? Feel free to open a PR!
+
+## Examples
+
+- **Playground (`./apps/playground`)**: Visit [trees.inve.rs](https://trees.inve.rs "playground") to see the deployed Astro demo.
+
+Run it locally from the repository root:
+
+```bash
+pnpm dev
 ```
 
-Pushes to `main` publish `solid-trees` to npm via semantic-release (version from
-Conventional Commits, tags `vX.Y.Z`) and deploy the playground to
-[trees.inve.rs](https://trees.inve.rs). The published package is the built
-`dist/` with `@solid-trees/path-store` bundled in, assembled by
-`pnpm release:pack` into `release-package/`; publish manually from there with
-`npm publish`, not from the workspace root or `packages/solid-trees`.
+## Installation
+
+```bash
+pnpm add solid-trees solid-js @solidjs/web
+```
+
+Requires Solid 2 (`solid-js` and `@solidjs/web` `^2.0.3`).
 
 ## Usage
 
@@ -146,7 +170,58 @@ import { themeToTreeStyles } from 'solid-trees';
 - `themeToTreeStyles` returns CSS property names (`background-color`), not
   React's camelCase.
 
+## Security
+
+To report a security vulnerability, **please do not open a public GitHub issue**. Email <me+security@inve.rs> instead. For the supported versions, scope, and supply chain hardening, see [SECURITY.md](./SECURITY.md).
+
+## Compiling From Source
+
+You will need [Node.js](https://nodejs.org/ "nodejs") and [pnpm](https://pnpm.io/ "pnpm").
+
+| Path                   | Contents                                                    |
+| ---------------------- | ----------------------------------------------------------- |
+| `packages/path-store`  | Upstream `@pierre/path-store`, vendored verbatim (private). |
+| `packages/solid-trees` | The library: model, Solid view, primitives.                 |
+| `apps/playground`      | Astro demo site (`pnpm dev`).                               |
+
+```bash
+pnpm install
+pnpm dev        # playground on http://localhost:4321
+pnpm test       # vitest + jsdom
+pnpm typecheck
+pnpm build      # library to packages/solid-trees/dist, playground to apps/playground/dist
+```
+
+Pushes to `main` publish `solid-trees` to npm via semantic-release (version from
+Conventional Commits, tags `vX.Y.Z`) and deploy the playground to
+[trees.inve.rs](https://trees.inve.rs). The published package is the built
+`dist/` with `@solid-trees/path-store` bundled in, assembled by
+`pnpm release:pack` into `release-package/`; publish manually from there with
+`npm publish`, not from the workspace root or `packages/solid-trees`.
+
+## Contributing
+
+Issues and pull requests are welcome. Run `pnpm lint`, `pnpm format:check`,
+`pnpm typecheck`, and `pnpm test` before opening a PR, and use
+[Conventional Commits](https://www.conventionalcommits.org/ "conventional commits")
+since versions are derived from them.
+
+## Support This Project
+
+If you find `solid-trees` useful and would like to support its development, you can consider making a donation on wise. Your contribution helps ensure continued maintenance and improvements.
+
+<img src="./@budisyahiddinb-wisetag.png" width="150">
+
+[Donate on Wise](https://wise.com/pay/me/budisyahiddinb)
+
+Thank you for your support!
+
 ## License
 
-Apache-2.0. Derived from `@pierre/trees` and `@pierre/path-store` by The Pierre
-Computer Company; see `packages/*/LICENSE.md` and `NOTICE.md`.
+`solid-trees` is released under the [Apache License 2.0](./LICENSE). Derived
+from `@pierre/trees` and `@pierre/path-store` by The Pierre Computer Company;
+see [NOTICE.md](./NOTICE.md) and `packages/*/LICENSE.md`.
+
+### Contribution
+
+Unless you explicitly state otherwise, any contribution intentionally submitted for inclusion in `solid-trees` by you, shall be licensed as Apache-2.0, without any additional terms or conditions.
