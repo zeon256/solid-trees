@@ -26,8 +26,9 @@ pnpm build      # library to packages/solid-trees/dist, playground to apps/playg
 Pushes to `main` publish `solid-trees` to npm via semantic-release (version from
 Conventional Commits, tags `vX.Y.Z`) and deploy the playground to
 [trees.inve.rs](https://trees.inve.rs). The published package is the built
-`dist/` with `@solid-trees/path-store` bundled in; see
-`packages/solid-trees/scripts/prepare-package.mjs`.
+`dist/` with `@solid-trees/path-store` bundled in, assembled by
+`pnpm release:pack` into `release-package/`; publish manually from there with
+`npm publish`, not from the workspace root or `packages/solid-trees`.
 
 ## Usage
 

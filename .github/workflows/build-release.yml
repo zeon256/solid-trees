@@ -30,12 +30,8 @@ jobs:
       - name: Build library
         run: pnpm --filter solid-trees build
       - name: Assemble release package
-        run: |
-          mkdir release-package
-          cp -r packages/solid-trees/dist packages/solid-trees/package.json \
-            packages/solid-trees/LICENSE.md packages/solid-trees/NOTICE.md \
-            README.md .releaserc release-package/
-          node packages/solid-trees/scripts/prepare-package.mjs release-package/package.json
+        run:
+          node packages/solid-trees/scripts/prepare-package.mjs release-package
       - name: Publish to npm (dry run)
         working-directory: release-package
         run: npm publish --dry-run
