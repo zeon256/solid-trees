@@ -20,7 +20,6 @@ import {
   onSettled,
   Show,
 } from 'solid-js';
-import type { Accessor } from 'solid-js';
 import {
   createFileTree,
   createFileTreeSearch,
@@ -38,9 +37,6 @@ import type {
   TreeThemeInput,
 } from 'solid-trees';
 
-import './playground.css';
-import 'solid-trees/styles.css';
-
 import {
   APP_ACTIVE_PATH,
   APP_EXPANDED_PATHS,
@@ -53,6 +49,9 @@ import {
 } from './demoData';
 
 type Scheme = 'auto' | 'light' | 'dark';
+
+// Shared by the header toggle and the theme demo, which mount separately.
+const [scheme, setScheme] = createSignal<Scheme>('auto');
 
 // --- Shared bits -------------------------------------------------------------
 
@@ -149,21 +148,6 @@ function TreeContextMenu(props: {
   );
 }
 
-function Section(props: {
-  id: string;
-  title: string;
-  children: JSX.Element;
-  description: JSX.Element;
-}): JSX.Element {
-  return (
-    <section class="section" id={props.id}>
-      <h2>{props.title}</h2>
-      <p class="lede">{props.description}</p>
-      {props.children}
-    </section>
-  );
-}
-
 function Icon(props: { path: string }): JSX.Element {
   return (
     <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true">
@@ -203,7 +187,7 @@ function AppDemo(): JSX.Element {
   const activePath = () => selection().at(-1) ?? null;
 
   return (
-    <div class="app-window">
+    <>
       <FileTree
         model={tree}
         class="app-tree"
@@ -313,7 +297,7 @@ function AppDemo(): JSX.Element {
           </p>
         </div>
       </section>
-    </div>
+    </>
   );
 }
 
@@ -340,37 +324,26 @@ function FlattenDemo(): JSX.Element {
   });
 
   return (
-    <Section
-      id="flatten"
-      title="Flatten empty directories"
-      description={
-        <>
-          <code>flattenEmptyDirectories</code> collapses single-child folder
-          chains into one row. Each segment stays a drop target.
-        </>
-      }
-    >
-      <div class="grid grid-2">
-        <figure>
-          <figcaption>Default expanded</figcaption>
-          <FileTree
-            model={hierarchical}
-            class="tree-panel"
-            data-demo="flatten-hierarchical"
-            style={{ height: '626px' }}
-          />
-        </figure>
-        <figure>
-          <figcaption>Flattened directories</figcaption>
-          <FileTree
-            model={flattened}
-            class="tree-panel"
-            data-demo="flatten-flattened"
-            style={{ height: '566px' }}
-          />
-        </figure>
-      </div>
-    </Section>
+    <div class="grid grid-2">
+      <figure>
+        <figcaption>Default expanded</figcaption>
+        <FileTree
+          model={hierarchical}
+          class="tree-panel"
+          data-demo="flatten-hierarchical"
+          style={{ height: '626px' }}
+        />
+      </figure>
+      <figure>
+        <figcaption>Flattened directories</figcaption>
+        <FileTree
+          model={flattened}
+          class="tree-panel"
+          data-demo="flatten-flattened"
+          style={{ height: '566px' }}
+        />
+      </figure>
+    </div>
   );
 }
 
@@ -426,52 +399,40 @@ function GitStatusDemo(): JSX.Element {
   });
 
   return (
-    <Section
-      id="git-status"
-      title="Show Git status on files"
-      description={
-        <>
-          <code>gitStatus</code> adds badges for added, modified, deleted,
-          renamed, untracked, and ignored files. Folders with changed
-          descendants get a dot.
-        </>
-      }
-    >
-      <div class="grid grid-2">
-        <FileTree
-          model={tree}
-          class="tree-panel"
-          data-demo="git-status"
-          style={{ height: '720px' }}
-        />
-        <table class="legend">
-          <thead>
-            <tr>
-              <th>Indicator</th>
-              <th>State</th>
-              <th>Description</th>
-            </tr>
-          </thead>
-          <tbody>
-            <For each={GIT_LEGEND}>
-              {(entry) => (
-                <tr>
-                  <td>
-                    <span class="badge" data-status={entry.status}>
-                      {entry.indicator}
-                    </span>
-                  </td>
-                  <td>
-                    <code>{entry.status}</code>
-                  </td>
-                  <td>{entry.description}</td>
-                </tr>
-              )}
-            </For>
-          </tbody>
-        </table>
-      </div>
-    </Section>
+    <div class="grid grid-2">
+      <FileTree
+        model={tree}
+        class="tree-panel"
+        data-demo="git-status"
+        style={{ height: '720px' }}
+      />
+      <table class="legend">
+        <thead>
+          <tr>
+            <th>Indicator</th>
+            <th>State</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <For each={GIT_LEGEND}>
+            {(entry) => (
+              <tr>
+                <td>
+                  <span class="badge" data-status={entry.status}>
+                    {entry.indicator}
+                  </span>
+                </td>
+                <td>
+                  <code>{entry.status}</code>
+                </td>
+                <td>{entry.description}</td>
+              </tr>
+            )}
+          </For>
+        </tbody>
+      </table>
+    </div>
   );
 }
 
@@ -536,7 +497,27 @@ function ThemeSelect(props: {
   );
 }
 
-function ThemeDemo(props: { scheme: Accessor<'light' | 'dark'> }): JSX.Element {
+function ThemeDemo(): JSX.Element {
+  const [prefersDark, setPrefersDark] = createSignal(false);
+  const effectiveScheme = createMemo((): 'light' | 'dark' => {
+    const value = scheme();
+    if (value !== 'auto') {
+      return value;
+    }
+    return prefersDark() ? 'dark' : 'light';
+  });
+  onSettled(() => {
+    const query = window.matchMedia('(prefers-color-scheme: dark)');
+    const update = () => {
+      setPrefersDark(query.matches);
+    };
+    update();
+    query.addEventListener('change', update);
+    return () => {
+      query.removeEventListener('change', update);
+    };
+  });
+
   const tree = createFileTree({
     paths: SAMPLE_PATHS,
     flattenEmptyDirectories: true,
@@ -549,25 +530,14 @@ function ThemeDemo(props: { scheme: Accessor<'light' | 'dark'> }): JSX.Element {
   const [darkTheme, setDarkTheme] = createSignal('pierre-dark');
   const styles = createMemo(() =>
     themeToTreeStyles(
-      props.scheme() === 'dark'
+      effectiveScheme() === 'dark'
         ? (DARK_THEMES.get(darkTheme()) ?? {})
         : (LIGHT_THEMES.get(lightTheme()) ?? {})
     )
   );
 
   return (
-    <Section
-      id="themes"
-      title="Use Shiki themes"
-      description={
-        <>
-          <code>themeToTreeStyles(theme)</code> maps a Shiki/VS Code theme to
-          <code>--trees-theme-*</code> variables; pass the result as the tree's{' '}
-          <code>style</code>. The page color scheme picks the light or dark
-          theme.
-        </>
-      }
-    >
+    <>
       <div class="toolbar">
         <ThemeSelect
           label="Light"
@@ -588,7 +558,7 @@ function ThemeDemo(props: { scheme: Accessor<'light' | 'dark'> }): JSX.Element {
         data-demo="themes"
         style={{ height: '716px', ...styles() }}
       />
-    </Section>
+    </>
   );
 }
 
@@ -679,21 +649,9 @@ function StyledTree(props: (typeof STYLED_TREES)[number]): JSX.Element {
 
 function StylingDemo(): JSX.Element {
   return (
-    <Section
-      id="styling"
-      title="Style with CSS variables"
-      description={
-        <>
-          Set <code>--trees-*-override</code> variables on the tree (or any
-          ancestor) to recolor it. Overrides win over theme tokens, which win
-          over the defaults.
-        </>
-      }
-    >
-      <div class="grid grid-3">
-        <For each={STYLED_TREES}>{(entry) => <StyledTree {...entry} />}</For>
-      </div>
-    </Section>
+    <div class="grid grid-3">
+      <For each={STYLED_TREES}>{(entry) => <StyledTree {...entry} />}</For>
+    </div>
   );
 }
 
@@ -749,21 +707,9 @@ function DensityTree(props: (typeof DENSITIES)[number]): JSX.Element {
 
 function DensityDemo(): JSX.Element {
   return (
-    <Section
-      id="density"
-      title="Adjustable density"
-      description={
-        <>
-          <code>density</code> (<code>compact</code>, <code>default</code>,{' '}
-          <code>relaxed</code>, or a number) sets the row height and the spacing
-          factor in one place.
-        </>
-      }
-    >
-      <div class="grid grid-3 align-start">
-        <For each={DENSITIES}>{(entry) => <DensityTree {...entry} />}</For>
-      </div>
-    </Section>
+    <div class="grid grid-3 align-start">
+      <For each={DENSITIES}>{(entry) => <DensityTree {...entry} />}</For>
+    </div>
   );
 }
 
@@ -776,33 +722,29 @@ function VirtualizationDemo(): JSX.Element {
     initialVisibleRowCount: 480 / 30,
   });
   return (
-    <Section
-      id="virtualization"
-      title="Virtualized, with sticky folders"
-      description={
-        <>
-          {LARGE_PATHS.length.toLocaleString()} files, every folder open. Only
-          the visible rows render; the folders you are inside stick to the top
-          while you scroll.
-        </>
-      }
-    >
-      <FileTree
-        model={tree}
-        class="tree-panel"
-        data-demo="virtualization"
-        style={{ height: '480px' }}
-      />
-    </Section>
+    <FileTree
+      model={tree}
+      class="tree-panel"
+      data-demo="virtualization"
+      style={{ height: '480px' }}
+    />
   );
 }
 
-// --- Page --------------------------------------------------------------------
+// --- Mounts ------------------------------------------------------------------
 
-function SchemeToggle(props: {
-  value: Scheme;
-  onChange: (value: Scheme) => void;
-}): JSX.Element {
+// `src/pages/index.astro` renders the static page, including each section's
+// heading and lede. `render` appends to a non-empty container, so each part
+// lands after the static content of its mount point.
+
+function SchemeToggle(): JSX.Element {
+  createEffect(
+    () => scheme(),
+    (value) => {
+      document.documentElement.dataset.scheme = value;
+    }
+  );
+
   const options: Array<Scheme> = ['auto', 'light', 'dark'];
   return (
     <div class="segmented" role="radiogroup" aria-label="Color scheme">
@@ -811,9 +753,9 @@ function SchemeToggle(props: {
           <button
             type="button"
             role="radio"
-            aria-checked={props.value === option ? 'true' : 'false'}
+            aria-checked={scheme() === option ? 'true' : 'false'}
             onClick={() => {
-              props.onChange(option);
+              setScheme(option);
             }}
           >
             {option[0].toUpperCase() + option.slice(1)}
@@ -824,83 +766,19 @@ function SchemeToggle(props: {
   );
 }
 
-function App(): JSX.Element {
-  const [scheme, setScheme] = createSignal<Scheme>('auto');
-  const [prefersDark, setPrefersDark] = createSignal(false);
-  const effectiveScheme = createMemo((): 'light' | 'dark' => {
-    const value = scheme();
-    if (value !== 'auto') {
-      return value;
-    }
-    return prefersDark() ? 'dark' : 'light';
-  });
-
-  onSettled(() => {
-    const query = window.matchMedia('(prefers-color-scheme: dark)');
-    const update = () => {
-      setPrefersDark(query.matches);
-    };
-    update();
-    query.addEventListener('change', update);
-    return () => {
-      query.removeEventListener('change', update);
-    };
-  });
-  createEffect(
-    () => scheme(),
-    (value) => {
-      document.documentElement.dataset.scheme = value;
-    }
-  );
-
-  return (
-    <div class="page">
-      <header class="site-header">
-        <a class="brand" href="#top">
-          solid-trees <span>SolidJS port of @pierre/trees</span>
-        </a>
-        <nav>
-          <a href="#flatten">Flatten</a>
-          <a href="#git-status">Git status</a>
-          <a href="#themes">Themes</a>
-          <a href="#density">Density</a>
-          <a href="https://trees.software" target="_blank" rel="noreferrer">
-            Upstream
-          </a>
-          <SchemeToggle value={scheme()} onChange={setScheme} />
-        </nav>
-      </header>
-      <main id="top">
-        <section class="hero">
-          <h1>A file tree for SolidJS</h1>
-          <p>
-            <code>solid-trees</code> is a SolidJS 2 port of{' '}
-            <a href="https://trees.software">@pierre/trees</a>: a virtualized,
-            path-first file tree with search, renaming, drag and drop, Git
-            status, and sticky folders, rendered in the light DOM.
-          </p>
-          <pre class="install">
-            <code>import 'solid-trees/styles.css';</code>
-          </pre>
-        </section>
-        <AppDemo />
-        <FlattenDemo />
-        <GitStatusDemo />
-        <ThemeDemo scheme={effectiveScheme} />
-        <StylingDemo />
-        <DensityDemo />
-        <VirtualizationDemo />
-      </main>
-      <footer class="site-footer">
-        Apache-2.0. Derived from @pierre/trees by The Pierre Computer Company.
-      </footer>
-    </div>
-  );
+function mountPoint(selector: string): Element {
+  const element = document.querySelector(selector);
+  if (element === null) {
+    throw new Error(`Missing mount point ${selector}`);
+  }
+  return element;
 }
 
-const rootElement = document.getElementById('root');
-if (rootElement === null) {
-  throw new Error('Missing #root element');
-}
-
-render(() => <App />, rootElement);
+render(() => <SchemeToggle />, mountPoint('.site-header nav'));
+render(() => <AppDemo />, mountPoint('.app-window'));
+render(() => <FlattenDemo />, mountPoint('#flatten'));
+render(() => <GitStatusDemo />, mountPoint('#git-status'));
+render(() => <ThemeDemo />, mountPoint('#themes'));
+render(() => <StylingDemo />, mountPoint('#styling'));
+render(() => <DensityDemo />, mountPoint('#density'));
+render(() => <VirtualizationDemo />, mountPoint('#virtualization'));

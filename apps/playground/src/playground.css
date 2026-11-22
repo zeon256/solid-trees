@@ -180,12 +180,35 @@ pre {
 }
 
 .install {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
   margin-top: 24px;
   padding: 12px 18px;
+  border: 0;
   border-radius: 8px;
   background: var(--page-fg);
   color: var(--page-bg);
+  font-family: var(--page-mono);
+  cursor: pointer;
+}
+
+.install:hover {
+  opacity: 0.9;
+}
+
+.install svg {
+  flex: none;
+  opacity: 0.7;
+}
+
+.install .icon-check,
+.install[data-copied] .icon-copy {
+  display: none;
+}
+
+.install[data-copied] .icon-check {
+  display: block;
 }
 
 /* Hero app window ----------------------------------------------------------- */

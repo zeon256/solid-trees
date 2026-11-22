@@ -13,11 +13,11 @@ stylesheet.
 | ---------------------- | ----------------------------------------------------------- |
 | `packages/path-store`  | Upstream `@pierre/path-store`, vendored verbatim (private). |
 | `packages/solid-trees` | The library: model, Solid view, primitives.                 |
-| `apps/playground`      | Vite demo (`pnpm dev`).                                     |
+| `apps/playground`      | Astro demo site (`pnpm dev`).                               |
 
 ```sh
 pnpm install
-pnpm dev        # playground on http://localhost:5173
+pnpm dev        # playground on http://localhost:4321
 pnpm test       # vitest + jsdom
 pnpm typecheck
 pnpm build      # library to packages/solid-trees/dist, playground to apps/playground/dist

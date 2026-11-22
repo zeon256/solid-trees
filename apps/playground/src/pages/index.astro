@@ -1,0 +1,184 @@
+---
+import '../playground.css';
+import 'solid-trees/styles.css';
+
+import { LARGE_PATHS } from '../demoData';
+
+const title = 'solid-trees: a file tree for SolidJS';
+const description =
+  'solid-trees is a SolidJS 2 port of @pierre/trees: a virtualized, path-first file tree with search, renaming, drag and drop, Git status, and sticky folders.';
+const canonical = new URL(Astro.url.pathname, Astro.site).href;
+const installCommand = 'npm install solid-trees';
+---
+
+<html lang="en" data-scheme="auto">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="generator" content={Astro.generator} />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <meta
+      name="theme-color"
+      content="#ffffff"
+      media="(prefers-color-scheme: light)"
+    />
+    <meta
+      name="theme-color"
+      content="#0b0b0c"
+      media="(prefers-color-scheme: dark)"
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="solid-trees" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/icon.ico" sizes="32x32" />
+    <link rel="apple-touch-icon" href="/apple-icon.png" />
+  </head>
+  <body>
+    <div class="page">
+      <header class="site-header">
+        <a class="brand" href="#top">
+          solid-trees <span>SolidJS port of @pierre/trees</span>
+        </a>
+        <nav>
+          <a href="#flatten">Flatten</a>
+          <a href="#git-status">Git status</a>
+          <a href="#themes">Themes</a>
+          <a href="#density">Density</a>
+          <a href="https://trees.software" target="_blank" rel="noreferrer">
+            Upstream
+          </a>
+        </nav>
+      </header>
+      <main id="top">
+        <section class="hero">
+          <h1>A file tree for SolidJS</h1>
+          <p>
+            <code>solid-trees</code> is a SolidJS 2 port of{' '}
+            <a href="https://trees.software">@pierre/trees</a>: a virtualized,
+            path-first file tree with search, renaming, drag and drop, Git
+            status, and sticky folders, rendered in the light DOM.
+          </p>
+          <button
+            type="button"
+            class="install"
+            data-copy={installCommand}
+            title="Copy to clipboard"
+          >
+            <span>{installCommand}</span>
+            <svg
+              class="icon-copy"
+              viewBox="0 0 16 16"
+              width="16"
+              height="16"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.5"
+              aria-hidden="true"
+            >
+              <rect x="5.5" y="5.5" width="8.5" height="8.5" rx="1.5"></rect>
+              <path d="M10.5 3.5V3A1.5 1.5 0 0 0 9 1.5H3A1.5 1.5 0 0 0 1.5 3v6A1.5 1.5 0 0 0 3 10.5h.5"
+              ></path>
+            </svg>
+            <svg
+              class="icon-check"
+              viewBox="0 0 16 16"
+              width="16"
+              height="16"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.5"
+              aria-hidden="true"
+            >
+              <path d="m3 8.5 3 3 7-7"></path>
+            </svg>
+          </button>
+        </section>
+
+        <!-- Solid mounts each demo after the static heading and lede. -->
+        <div class="app-window"></div>
+
+        <section class="section" id="flatten">
+          <h2>Flatten empty directories</h2>
+          <p class="lede">
+            <code>flattenEmptyDirectories</code> collapses single-child folder
+            chains into one row. Each segment stays a drop target.
+          </p>
+        </section>
+
+        <section class="section" id="git-status">
+          <h2>Show Git status on files</h2>
+          <p class="lede">
+            <code>gitStatus</code> adds badges for added, modified, deleted,
+            renamed, untracked, and ignored files. Folders with changed
+            descendants get a dot.
+          </p>
+        </section>
+
+        <section class="section" id="themes">
+          <h2>Use Shiki themes</h2>
+          <p class="lede">
+            <code>themeToTreeStyles(theme)</code> maps a Shiki/VS Code theme
+            to <code>--trees-theme-*</code> variables; pass the result as the
+            tree's <code>style</code>. The page color scheme picks the light or
+            dark theme.
+          </p>
+        </section>
+
+        <section class="section" id="styling">
+          <h2>Style with CSS variables</h2>
+          <p class="lede">
+            Set <code>--trees-*-override</code> variables on the tree (or any
+            ancestor) to recolor it. Overrides win over theme tokens, which win
+            over the defaults.
+          </p>
+        </section>
+
+        <section class="section" id="density">
+          <h2>Adjustable density</h2>
+          <p class="lede">
+            <code>density</code> (<code>compact</code>, <code>default</code>,{' '}
+            <code>relaxed</code>, or a number) sets the row height and the
+            spacing factor in one place.
+          </p>
+        </section>
+
+        <section class="section" id="virtualization">
+          <h2>Virtualized, with sticky folders</h2>
+          <p class="lede">
+            {LARGE_PATHS.length.toLocaleString('en-US')} files, every folder open.
+            Only the visible rows render; the folders you are inside stick to the
+            top while you scroll.
+          </p>
+        </section>
+      </main>
+      <footer class="site-footer">
+        Apache-2.0. Derived from @pierre/trees by The Pierre Computer Company.
+      </footer>
+    </div>
+    <script>
+      import '../main.tsx';
+
+      for (const button of document.querySelectorAll<HTMLButtonElement>(
+        '[data-copy]'
+      )) {
+        let reset: number | undefined;
+        button.addEventListener('click', async () => {
+          await navigator.clipboard.writeText(button.dataset.copy ?? '');
+          button.dataset.copied = '';
+          window.clearTimeout(reset);
+          reset = window.setTimeout(() => {
+            delete button.dataset.copied;
+          }, 1500);
+        });
+      }
+    </script>
+  </body>
+</html>
