@@ -32,9 +32,11 @@ jobs:
       - name: Assemble release package
         run:
           node packages/solid-trees/scripts/prepare-package.mjs release-package
-      - name: Publish to npm (dry run)
+      # `npm publish --dry-run` rejects versions already on the registry, and
+      # the real version is only set by semantic-release in the release job.
+      - name: Pack npm tarball (dry run)
         working-directory: release-package
-        run: npm publish --dry-run
+        run: npm pack --dry-run
       - name: Upload artifact
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
