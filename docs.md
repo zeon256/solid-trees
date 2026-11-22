@@ -1,0 +1,23 @@
+# Overview (/docs)
+
+**solid-trees** uses one path-first model. It is a SolidJS 2 port of
+[`@pierre/trees`](https://trees.software): the model layer is vendored from
+upstream, and the view is a native Solid rewrite rendered into the light DOM.
+Selection, focus, search, rename, drag and drop, Git status, and row annotations
+all use canonical paths.
+
+<OverviewTree />
+
+These docs are guide-first. First, create a model and render it. Next, shape the
+tree data before it reaches the UI. Then add search, item actions, styling,
+icons, or row signals when you need them.
+
+<Cards>
+<Card title="Get started" href="/docs/guides/get-started">
+Create a model with `createFileTree` and render it with `<FileTree>`.
+</Card>
+
+<Card title="Shared concepts" href="/docs/reference/shared-concepts">
+The path-first vocabulary behind every option and event.
+</Card>
+</Cards>

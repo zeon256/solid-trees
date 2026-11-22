@@ -1,0 +1,106 @@
+# Navigate selection, focus, and search (/docs/guides/navigate-selection-focus-and-search)
+
+The tree model tracks three user-facing states: selection, focus, and the
+visible row set. Search builds on the same model. It does not add a separate
+identity system.
+
+## Start with the interaction state model [#start-with-the-interaction-state-model]
+
+Selection, focus, keyboard movement, and search all use canonical paths. The
+visible tree can change when a branch collapses or when search removes rows.
+Your app still uses the same path values.
+
+For this reason, the public APIs return path-based results. Selected paths are a
+`readonly string[]`. Focused items are path strings. Search matches are path
+strings.
+
+## Selection and focus are related but different [#selection-and-focus-are-related-but-different]
+
+Focus tells you where keyboard actions land. Selection tells you which rows the
+app treats as chosen. The two often move together. But they are not the same.
+
+Read the selected paths when you need the multi-select state in surrounding UI.
+Read the focused path or item handle when you need to know where a rename,
+keyboard action, or command lands next.
+
+## Keyboard navigation follows the visible tree [#keyboard-navigation-follows-the-visible-tree]
+
+Keyboard movement works on the visible, expanded tree. Expand or collapse a
+branch to change which row receives focus next. Search changes the same visible
+tree. So search also changes where keyboard movement lands.
+
+For this reason, `solid-trees` exposes focus and selection through the model. It
+does not use DOM order or row indexes.
+
+## Add search on top of that same state [#add-search-on-top-of-that-same-state]
+
+Search matches the same path-first tree data. It changes what stays visible. But
+it does not add a second identity model. Selection and focus still use paths.
+The visible window changes around the current query.
+
+## Guide default: `hide-non-matches` [#guide-default-hide-non-matches]
+
+Start with `hide-non-matches`. Change it only when the product needs unrelated
+branches on screen. This mode fits the common "find the thing I want" workflow.
+It keeps the visible tree close to the current search intent.
+
+`solid-trees` also supports `collapse-non-matches` and `expand-matches`. Use
+those modes when the surrounding UI needs more context. But keep
+`hide-non-matches` as the default mental model. The shared meaning of all three
+modes is in
+[Shared concepts](/docs/reference/shared-concepts#search-mode-semantics).
+
+## Solid integration notes [#solid-integration-notes]
+
+Solid reads from the model through primitives and tracked model getters. Solid
+writes back through model methods.
+
+```tsx title="search-panel.tsx"
+import {
+  createFileTree,
+  createFileTreeSearch,
+  createFileTreeSelection,
+  FileTree,
+} from 'solid-trees';
+
+export function SearchPanel(props: { paths: readonly string[] }) {
+  const tree = createFileTree({
+    paths: props.paths,
+    search: true,
+    fileTreeSearchMode: 'hide-non-matches',
+  });
+  const selectedPaths = createFileTreeSelection(tree);
+  const search = createFileTreeSearch(tree);
+
+  return (
+    <div class="stack">
+      <label>
+        <span>Search</span>
+        <input
+          value={search.state().value}
+          onInput={(event) => search.setValue(event.currentTarget.value)}
+        />
+      </label>
+      <p>{selectedPaths().length} selected</p>
+      <p>Focused: {tree.getFocusedPath() ?? '(none)'}</p>
+      <FileTree model={tree} style={{ height: '320px' }} />
+    </div>
+  );
+}
+```
+
+Use `createFileTreeSelector(...)` when sibling UI needs a custom derived value.
+Outside Solid scopes, the same getters (`getSelectedPaths()`,
+`getFocusedPath()`, `getSearchMatchingPaths()`) return the current values
+imperatively.
+
+The DOM is not the source of truth. The model is the source of truth.
+
+## What to read next [#what-to-read-next]
+
+- For API lookup, read [Solid API](/docs/reference/solid-api) or
+  [Model API](/docs/reference/model-api).
+- For shared search-mode semantics, read
+  [Shared concepts](/docs/reference/shared-concepts#search-mode-semantics).
+- For row-level editing workflows that build on this focus model, continue with
+  [Rename, drag, and trigger item actions](/docs/guides/rename-drag-and-trigger-item-actions).

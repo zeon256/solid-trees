@@ -1,0 +1,20 @@
+# Docs
+
+- [Overview](/docs.md): Guide-first documentation for solid-trees, covering the Solid API, prepared input, styling, icons, Git status, and large trees.
+- [Build with agents](/docs/build-with-agents.md): Feed the solid-trees docs to your agent as plain text.
+- Guides
+  - [Get started](/docs/guides/get-started.md): Create one tree model with createFileTree and render it with the FileTree component.
+  - [Shape tree data for fast rendering](/docs/guides/shape-tree-data-for-fast-rendering.md): Prepare tree input outside the UI so the client skips repeated shape and sort work.
+  - [Navigate selection, focus, and search](/docs/guides/navigate-selection-focus-and-search.md): How selection, focus, keyboard movement, and search share one path-first model.
+  - [Rename, drag, and trigger item actions](/docs/guides/rename-drag-and-trigger-item-actions.md): Inline rename, drag and drop, and optional context-menu commands, all path-first.
+  - [Style and theme the tree](/docs/guides/style-and-theme-the-tree.md): Host styles, CSS variables, editor themes, density, and plain page CSS.
+  - [Customize icons](/docs/guides/customize-icons.md): Built-in icon sets, color mode, targeted remaps, and custom sprite sheets.
+  - [Show Git status and row annotations](/docs/guides/show-git-status-and-row-annotations.md): Built-in Git status signals and custom row decorations for everything else.
+  - [Handle large trees efficiently](/docs/guides/handle-large-trees-efficiently.md): Shape and order the data before it reaches the UI, then tune rendering only where it helps.
+- Reference
+  - [Shared concepts](/docs/reference/shared-concepts.md): The path-first identity model, input shapes, options, and mutation vocabulary.
+  - [Solid API](/docs/reference/solid-api.md): createFileTree, the FileTree component, and the reactive primitives over the model.
+  - [Model API](/docs/reference/model-api.md): The FileTreeModel methods for reads, item handles, focus, search, mutations, and runtime reconfiguration.
+  - [Styling and theming](/docs/reference/styling-and-theming.md): Lookup reference for host styling, CSS variables, themeToTreeStyles, layers, and page CSS.
+  - [Icons](/docs/reference/icons.md): Lookup reference for icon sets, remaps, sprite sheets, and resolution order.
+  - [Differences from @pierre/trees](/docs/reference/differences-from-pierre-trees.md): What changed in the SolidJS 2 port, and what did not.

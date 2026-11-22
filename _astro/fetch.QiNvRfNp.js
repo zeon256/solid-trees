@@ -1,0 +1,1 @@
+export{t as fetchClient}from"./search-default.--ISQuS8.js";
