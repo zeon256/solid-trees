@@ -5,11 +5,12 @@
   "license": "Apache-2.0",
   "scripts": {
     "dev": "pnpm --filter playground dev",
+    "dev:docs": "pnpm --filter docs dev",
     "build": "pnpm -r build",
     "release:pack": "pnpm --filter solid-trees build && node packages/solid-trees/scripts/prepare-package.mjs release-package",
     "test": "pnpm -r test",
     "typecheck": "pnpm -r typecheck",
-    "lint": "oxlint .",
+    "lint": "pnpm --filter docs sync && oxlint .",
     "format": "oxfmt .",
     "format:check": "oxfmt --check ."
   },

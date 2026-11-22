@@ -66,40 +66,43 @@ const installCommand = 'npm install solid-trees';
             path-first file tree with search, renaming, drag and drop, Git
             status, and sticky folders, rendered in the light DOM.
           </p>
-          <button
-            type="button"
-            class="install"
-            data-copy={installCommand}
-            title="Copy to clipboard"
-          >
-            <span>{installCommand}</span>
-            <svg
-              class="icon-copy"
-              viewBox="0 0 16 16"
-              width="16"
-              height="16"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1.5"
-              aria-hidden="true"
+          <div class="hero-actions">
+            <button
+              type="button"
+              class="install"
+              data-copy={installCommand}
+              title="Copy to clipboard"
             >
-              <rect x="5.5" y="5.5" width="8.5" height="8.5" rx="1.5"></rect>
-              <path d="M10.5 3.5V3A1.5 1.5 0 0 0 9 1.5H3A1.5 1.5 0 0 0 1.5 3v6A1.5 1.5 0 0 0 3 10.5h.5"
-              ></path>
-            </svg>
-            <svg
-              class="icon-check"
-              viewBox="0 0 16 16"
-              width="16"
-              height="16"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1.5"
-              aria-hidden="true"
-            >
-              <path d="m3 8.5 3 3 7-7"></path>
-            </svg>
-          </button>
+              <span>{installCommand}</span>
+              <svg
+                class="icon-copy"
+                viewBox="0 0 16 16"
+                width="16"
+                height="16"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+                aria-hidden="true"
+              >
+                <rect x="5.5" y="5.5" width="8.5" height="8.5" rx="1.5"></rect>
+                <path d="M10.5 3.5V3A1.5 1.5 0 0 0 9 1.5H3A1.5 1.5 0 0 0 1.5 3v6A1.5 1.5 0 0 0 3 10.5h.5"
+                ></path>
+              </svg>
+              <svg
+                class="icon-check"
+                viewBox="0 0 16 16"
+                width="16"
+                height="16"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+                aria-hidden="true"
+              >
+                <path d="m3 8.5 3 3 7-7"></path>
+              </svg>
+            </button>
+            <a class="docs-link" href="/docs">Documentation</a>
+          </div>
         </section>
 
         <!-- Solid mounts each demo after the static heading and lede. -->

@@ -1,0 +1,12 @@
+{
+  "title": "Reference",
+  "defaultOpen": true,
+  "pages": [
+    "shared-concepts",
+    "solid-api",
+    "model-api",
+    "styling-and-theming",
+    "icons",
+    "differences-from-pierre-trees"
+  ]
+}

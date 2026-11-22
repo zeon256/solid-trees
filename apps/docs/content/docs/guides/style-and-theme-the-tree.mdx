@@ -1,0 +1,134 @@
+---
+title: Style and theme the tree
+description:
+  Host styles, CSS variables, editor themes, density, and plain page CSS.
+---
+
+Start with the host element. Then move inward. Host styles control the outer
+panel. CSS variables control most of the tree appearance.
+`themeToTreeStyles(...)` maps an editor-like theme into the same variable
+system. The tree renders into the light DOM, so plain page CSS is the escape
+hatch when the supported surfaces cannot reach a narrow case.
+
+## Start with host styling
+
+The host element is the outer panel boundary. Use it for width, height, borders,
+radius, background, and layout placement.
+
+Pass normal host props to `<FileTree model={...} />`.
+
+```tsx title="host-styling.tsx"
+<FileTree
+  model={tree}
+  class="project-tree"
+  style={{
+    height: '384px',
+    'background-color': 'var(--panel)',
+    'border-color': 'var(--border)',
+  }}
+/>
+```
+
+## Use CSS variables for most visual changes
+
+CSS variables are the main public styling surface inside the tree. Use them
+before you write selectors against the tree's markup. Solid's `style` object
+takes custom properties directly.
+
+```tsx title="css-variables.tsx"
+<FileTree
+  model={tree}
+  style={{
+    height: '384px',
+    '--trees-selected-bg-override':
+      'color-mix(in oklab, var(--accent) 24%, transparent)',
+    '--trees-focus-ring-color-override': 'var(--accent)',
+  }}
+/>
+```
+
+You can also set the variables on any ancestor in a stylesheet. This approach
+keeps the normal fallback chain in place:
+
+1. explicit override variables (`--trees-*-override`)
+2. `--trees-theme-*` variables from theme helpers
+3. library defaults
+
+For the token families behind those variables, read
+[Styling and theming](/docs/reference/styling-and-theming).
+
+## Match an editor palette with `themeToTreeStyles(...)`
+
+Use `themeToTreeStyles(...)` when your app already has a VS Code or Shiki-style
+theme object. It maps that theme to host styles. It also maps the theme to the
+`--trees-theme-*` variables that the tree understands. The result is a Solid
+`style` object, keyed by CSS property names.
+
+```tsx title="theme-to-tree-styles.tsx"
+import dracula from '@shikijs/themes/dracula';
+import { themeToTreeStyles } from 'solid-trees';
+
+const treeStyles = themeToTreeStyles(dracula);
+
+<FileTree
+  model={tree}
+  style={{
+    height: '384px',
+    ...treeStyles,
+    '--trees-selected-bg-override':
+      'color-mix(in oklab, var(--accent) 28%, transparent)',
+  }}
+/>;
+```
+
+This helper gives you matching panel colors, selection colors, search-field
+colors, and Git-status colors. You do not rebuild the theme system by hand.
+
+## Set density with `density`
+
+Pass `density` to `createFileTree(...)`. This option sets row height and spacing
+together. The keyword form (`'compact'`, `'default'`, `'relaxed'`) sets both
+values at once. The numeric form keeps the default row height and sets a custom
+spacing factor. `<FileTree>` paints `--trees-item-height` and
+`--trees-density-override` onto the host from the resolved density. This step
+keeps the virtualized row height and the painted row height aligned. Set
+`itemHeight` only when you need a row height that does not match a preset.
+
+The keyword presets are exported as `FILE_TREE_DENSITY_PRESETS`. So helpers such
+as `initialVisibleRowCount` can divide by the preset row height. They do not
+hard-code it.
+
+## Follow your page's color scheme
+
+The tree root sets `color-scheme: light dark`, so its colors follow the OS
+preference. When your page has its own light and dark toggle, pin the tree to it
+with `style={{ 'color-scheme': 'dark' }}`, `'inherit'`, or a page CSS rule.
+
+## Choose the right styling layer
+
+Use:
+
+- host styles for layout and panel framing
+- CSS variables for product-specific appearance changes inside the tree
+- `themeToTreeStyles(...)` when the tree must inherit an editor palette
+- plain page CSS for narrow cases the variables cannot express
+
+Add explicit overrides on top when the imported theme is close but not final.
+
+## Page CSS is the escape hatch
+
+Upstream injects custom CSS into its shadow root through `unsafeCSS`. Here the
+tree lives in the light DOM, so ordinary page CSS reaches it. Unlayered page CSS
+overrides every `solid-trees` layer. Keep it small, local, and secondary.
+
+```css title="tree-overrides.css"
+.project-tree [data-item-focused='true'] {
+  text-decoration: underline;
+}
+```
+
+Do not start here. Do not rebuild the whole visual system from raw selectors.
+For a broad lookup of the supported styling surfaces, read
+[Styling and theming](/docs/reference/styling-and-theming). For icon-specific
+appearance changes, continue with
+[Customize icons](/docs/guides/customize-icons).

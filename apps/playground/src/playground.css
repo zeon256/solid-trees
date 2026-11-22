@@ -179,11 +179,18 @@ pre {
   color: var(--page-fg);
 }
 
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-top: 24px;
+}
+
 .install {
   display: inline-flex;
   align-items: center;
   gap: 12px;
-  margin-top: 24px;
   padding: 12px 18px;
   border: 0;
   border-radius: 8px;
@@ -209,6 +216,19 @@ pre {
 
 .install[data-copied] .icon-check {
   display: block;
+}
+
+.docs-link {
+  /* One pixel less than `.install` on each side, for the border. */
+  padding: 11px 17px;
+  border: 1px solid var(--page-border);
+  border-radius: 8px;
+  color: var(--page-fg);
+  text-decoration: none;
+}
+
+.docs-link:hover {
+  background: var(--page-subtle);
 }
 
 /* Hero app window ----------------------------------------------------------- */

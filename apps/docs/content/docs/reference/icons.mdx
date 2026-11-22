@@ -1,0 +1,102 @@
+---
+title: Icons
+description:
+  Lookup reference for icon sets, remaps, sprite sheets, and resolution order.
+---
+
+This page is the lookup reference for icon sets, icon remaps, sprite-sheet
+extension, and icon-specific configuration rules.
+
+## Entry points
+
+Built-in set selection:
+
+- `icons: 'minimal' | 'standard' | 'complete'`
+- `minimal` keeps the visual noise low
+- `standard` adds common language and file-type icons
+- `complete` has the broadest built-in coverage, and is the default
+
+Object configuration:
+
+- use `FileTreeIconConfig` when a string set is not enough
+- combine a base set with color toggles, slot remaps, or file-specific remaps
+
+## Configuration shape
+
+Base set and color mode:
+
+- `set?: 'minimal' | 'standard' | 'complete' | 'none'`
+- `colored?: boolean`
+
+`set: 'none'` turns off the built-in file-type mappings. File rows still fall
+back to the generic file icon. Remaps can replace that icon. When you pass
+custom rules without a `set`, it defaults to `'none'`.
+
+Sprite-sheet extension:
+
+- `spriteSheet?: string`
+- supply an SVG string with `<symbol>` definitions that remaps can target
+
+Built-in slot remapping:
+
+- `remap?: Record<string, RemappedIcon>`
+- common slots: `file-tree-icon-chevron`, `file-tree-icon-file`,
+  `file-tree-icon-dot` (modified state), `file-tree-icon-lock` (locked path)
+
+File-specific remapping:
+
+- `byFileName` for exact basename matches such as `package.json`
+- `byFileNameContains` for basename substring rules such as `dockerfile`
+- `byFileExtension` for extension rules without a leading dot, and for
+  multi-part suffixes such as `spec.ts`
+
+## Resolution order
+
+File icon lookup resolves in this order:
+
+1. exact basename match from `byFileName`
+2. basename-contains match from `byFileNameContains`
+3. extension match from `byFileExtension`, and the more specific suffix wins
+4. built-in set mapping
+5. generic file-slot remap or fallback
+
+So `spec.ts` wins over `ts` when both rules exist.
+
+## `RemappedIcon` shape
+
+`RemappedIcon` supports two forms:
+
+- a string symbol id
+- an object with `name`, and optional `width`, `height`, and `viewBox`
+
+Use the object form when the replacement symbol needs non-default geometry
+metadata.
+
+## Sprite sheets and several trees
+
+Each tree prefixes the symbol ids of its sprite sheet (the built-in set plus
+`icons.spriteSheet`), so several trees in one document never resolve each
+other's icons. Names a sheet does not define resolve document-wide.
+`getBuiltInSpriteSheet(...)` and `createFileTreeIconResolver(...)` expose the
+built-in sheet and the lookup for custom rendering.
+
+## Runtime touchpoints
+
+- pass the icon configuration to `createFileTree(...)`
+- update it later with `setIcons(...)`
+
+For the lookup around those touchpoints, read
+[Solid API](/docs/reference/solid-api) and
+[Model API](/docs/reference/model-api).
+
+## Icon color interplay
+
+Turn off the built-in colored icons with `colored: false`. The token lookup and
+the fallback precedence for icon colors are in
+[Styling and theming](/docs/reference/styling-and-theming).
+
+## Related pages
+
+- [Customize icons](/docs/guides/customize-icons) for the walkthrough
+- [Style and theme the tree](/docs/guides/style-and-theme-the-tree) for broader
+  appearance changes
