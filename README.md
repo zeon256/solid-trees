@@ -28,22 +28,32 @@ visual styles shipped as an importable stylesheet.
 - Git status decorations
 - Sticky folders and flattened empty directories
 - Custom icons, labels, header, and context menu (Solid JSX)
-- Upstream's visual styles, tokens, and layers, themable with Shiki/VS Code themes
+- Upstream's visual styles, tokens, and layers, themable with Shiki/VS Code
+  themes
 - Light DOM only: style it with plain page CSS
 
 ## Users
 
-- [live-preview.inve.rs](https://live-preview.inve.rs "live-preview") ([solid-markdown-wasm](https://github.com/zeon256/solid-markdown-wasm "solid-markdown-wasm"))
+- [live-preview.inve.rs](https://live-preview.inve.rs 'live-preview')
+  ([solid-markdown-wasm](https://github.com/zeon256/solid-markdown-wasm 'solid-markdown-wasm'))
 - Using this project and want your company/project here? Feel free to open a PR!
 
 ## Examples
 
-- **Playground (`./apps/playground`)**: Visit [trees.inve.rs](https://trees.inve.rs "playground") to see the deployed Astro demo.
+- **Playground (`./apps/playground`)**: Visit
+  [trees.inve.rs](https://trees.inve.rs 'playground') to see the deployed Astro
+  demo.
+- **Docs (`./apps/docs`)**: Visit
+  [trees.inve.rs/docs](https://trees.inve.rs/docs 'docs') for guide-first
+  documentation, adapted from
+  [upstream's docs](https://trees.software/docs 'upstream docs') and built with
+  Fumadocs on Astro.
 
-Run it locally from the repository root:
+Run them locally from the repository root:
 
 ```bash
-pnpm dev
+pnpm dev        # playground
+pnpm dev:docs   # docs
 ```
 
 ## Installation
@@ -172,30 +182,36 @@ import { themeToTreeStyles } from 'solid-trees';
 
 ## Security
 
-To report a security vulnerability, **please do not open a public GitHub issue**. Email <me+security@inve.rs> instead. For the supported versions, scope, and supply chain hardening, see [SECURITY.md](./SECURITY.md).
+To report a security vulnerability, **please do not open a public GitHub
+issue**. Email <me+security@inve.rs> instead. For the supported versions, scope,
+and supply chain hardening, see [SECURITY.md](./SECURITY.md).
 
 ## Compiling From Source
 
-You will need [Node.js](https://nodejs.org/ "nodejs") and [pnpm](https://pnpm.io/ "pnpm").
+You will need [Node.js](https://nodejs.org/ 'nodejs') and
+[pnpm](https://pnpm.io/ 'pnpm').
 
 | Path                   | Contents                                                    |
 | ---------------------- | ----------------------------------------------------------- |
 | `packages/path-store`  | Upstream `@pierre/path-store`, vendored verbatim (private). |
 | `packages/solid-trees` | The library: model, Solid view, primitives.                 |
 | `apps/playground`      | Astro demo site (`pnpm dev`).                               |
+| `apps/docs`            | Fumadocs + Astro docs site (`pnpm dev:docs`).               |
 
 ```bash
 pnpm install
 pnpm dev        # playground on http://localhost:4321
+pnpm dev:docs   # docs on http://localhost:4322/docs
 pnpm test       # vitest + jsdom
 pnpm typecheck
-pnpm build      # library to packages/solid-trees/dist, playground to apps/playground/dist
+pnpm build      # library to packages/solid-trees/dist, apps to apps/*/dist
 ```
 
 Pushes to `main` publish `solid-trees` to npm via semantic-release (version from
 Conventional Commits, tags `vX.Y.Z`) and deploy the playground to
-[trees.inve.rs](https://trees.inve.rs). The published package is the built
-`dist/` with `@solid-trees/path-store` bundled in, assembled by
+[trees.inve.rs](https://trees.inve.rs) and the docs to
+[trees.inve.rs/docs](https://trees.inve.rs/docs). The published package is the
+built `dist/` with `@solid-trees/path-store` bundled in, assembled by
 `pnpm release:pack` into `release-package/`; publish manually from there with
 `npm publish`, not from the workspace root or `packages/solid-trees`.
 
@@ -203,12 +219,14 @@ Conventional Commits, tags `vX.Y.Z`) and deploy the playground to
 
 Issues and pull requests are welcome. Run `pnpm lint`, `pnpm format:check`,
 `pnpm typecheck`, and `pnpm test` before opening a PR, and use
-[Conventional Commits](https://www.conventionalcommits.org/ "conventional commits")
+[Conventional Commits](https://www.conventionalcommits.org/ 'conventional commits')
 since versions are derived from them.
 
 ## Support This Project
 
-If you find `solid-trees` useful and would like to support its development, you can consider making a donation on wise. Your contribution helps ensure continued maintenance and improvements.
+If you find `solid-trees` useful and would like to support its development, you
+can consider making a donation on wise. Your contribution helps ensure continued
+maintenance and improvements.
 
 <img src="./@budisyahiddinb-wisetag.png" width="150">
 
@@ -224,4 +242,6 @@ see [NOTICE.md](./NOTICE.md) and `packages/*/LICENSE.md`.
 
 ### Contribution
 
-Unless you explicitly state otherwise, any contribution intentionally submitted for inclusion in `solid-trees` by you, shall be licensed as Apache-2.0, without any additional terms or conditions.
+Unless you explicitly state otherwise, any contribution intentionally submitted
+for inclusion in `solid-trees` by you, shall be licensed as Apache-2.0, without
+any additional terms or conditions.

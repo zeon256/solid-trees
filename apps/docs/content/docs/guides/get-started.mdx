@@ -1,0 +1,148 @@
+---
+title: Get started
+description:
+  Create one tree model with createFileTree and render it with the FileTree
+  component.
+---
+
+`solid-trees` gives you one path-first model and a thin Solid layer over it:
+`createFileTree(...)` creates the model, and `<FileTree model={...} />` renders
+it. The primitives `createFileTreeSelection(...)`, `createFileTreeSearch(...)`,
+and `createFileTreeSelector(...)` derive reactive values from the same model.
+
+## Path-first identity
+
+Use canonical path strings as the public identity for each item in the tree. For
+example, `src/components/Button.tsx` is more than a label on screen. It is the
+value that you read from selection state. It is the path that you focus in code.
+It is also the target that you rename or move later.
+
+To learn the shared terms behind this rule, read
+[Shared concepts](/docs/reference/shared-concepts).
+
+## Install `solid-trees`
+
+The package needs Solid 2 (`solid-js` and `@solidjs/web` `^2.0.3`) next to it.
+
+```npm
+npm install solid-trees solid-js @solidjs/web
+```
+
+Import the stylesheet once. `<FileTree>` injects the structural layer itself, so
+trees work without it, but the stylesheet adds the visual styles.
+
+```ts title="main.ts"
+import 'solid-trees/styles.css';
+```
+
+## Create the model with `createFileTree(...)`
+
+`createFileTree(...)` creates the model one time. The current reactive owner
+owns it, so the model is cleaned up when the owner disposes. Options are read
+once. Later option changes do not update the model. Update the model through
+methods when the tree data or runtime behavior changes after mount. The methods
+include `resetPaths(...)`, `setComposition(...)`, `setGitStatus(...)`, and
+`setIcons(...)`.
+
+For small trees, pass raw `paths`. For scalable trees, use `preparedInput`.
+Create `preparedInput` on the server or another non-UI boundary.
+
+```tsx title="project-tree.tsx"
+import { createFileTree, FileTree } from 'solid-trees';
+import type { FileTreePreparedInput } from 'solid-trees';
+
+interface ProjectTreeProps {
+  preparedInput: FileTreePreparedInput;
+}
+
+export function ProjectTree(props: ProjectTreeProps) {
+  const tree = createFileTree({
+    preparedInput: props.preparedInput,
+    search: true,
+    initialExpandedPaths: ['src', 'src/components'],
+  });
+
+  return (
+    <FileTree model={tree} class="project-tree" style={{ height: '320px' }} />
+  );
+}
+```
+
+Read
+[Shape tree data for fast rendering](/docs/guides/shape-tree-data-for-fast-rendering)
+after this quickstart if you must still decide how to shape that input.
+
+## Render with `<FileTree model={model} />`
+
+`<FileTree />` is a thin Solid view over the model. It renders the tree into the
+light DOM. It forwards normal host props such as `class` and `style`. The tree
+virtualizes its rows, so give it a bounded height. Swapping the `model` prop
+remounts the view.
+
+Keep the mental model simple. The model owns the tree state. The Solid component
+renders it.
+
+## Read and update tree state through the model
+
+Solid code reads from the model through primitives and model getters. Solid code
+writes back through model methods.
+
+```tsx title="searchable-tree.tsx"
+import {
+  createFileTree,
+  createFileTreeSearch,
+  createFileTreeSelection,
+  FileTree,
+} from 'solid-trees';
+
+export function SearchableTree(props: { paths: readonly string[] }) {
+  const tree = createFileTree({
+    paths: props.paths,
+    fileTreeSearchMode: 'hide-non-matches',
+    search: true,
+  });
+  const selectedPaths = createFileTreeSelection(tree);
+  const search = createFileTreeSearch(tree);
+
+  return (
+    <div class="stack">
+      <input
+        value={search.state().value}
+        onInput={(event) => search.setValue(event.currentTarget.value)}
+        placeholder="Search files"
+      />
+      <p>{selectedPaths().length} item(s) selected.</p>
+      <FileTree model={tree} style={{ height: '320px' }} />
+    </div>
+  );
+}
+```
+
+Use `createFileTreeSelector(model, selector, isEqual?)` when sibling UI needs a
+custom derived value. It only notifies when the selected value changes. Model
+getters such as `getFocusedPath()` also track inside Solid scopes, so you can
+read them directly in JSX. For the shared interaction terms, read
+[Navigate selection, focus, and search](/docs/guides/navigate-selection-focus-and-search)
+and [Solid API](/docs/reference/solid-api).
+
+## Use simple `paths` input only when the tree is small
+
+Raw `paths` is the low-ceremony path for demos, tests, and very small static
+trees. It is not the scalable default. Move the shape or sort work out of the UI
+when the tree becomes expensive on the client.
+
+## Move to prepared input before the tree gets expensive
+
+Use this recommended scale path:
+
+1. Load canonical paths on the server or another non-UI boundary.
+2. Prepare the tree input one time.
+3. Pass `preparedInput` into `createFileTree(...)`.
+
+Use `preparePresortedFileTreeInput(...)` when the server already knows the final
+order. It is the highest-performance prepared-input variant. The client can skip
+both the shaping work and the extra sorting work.
+
+Unlike upstream, `solid-trees` renders on the client only. There is no SSR
+preload or hydration step. See
+[Differences from `@pierre/trees`](/docs/reference/differences-from-pierre-trees).

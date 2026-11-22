@@ -1,4 +1,4 @@
-name: Deploy Playground to GitHub Pages
+name: Deploy Playground and Docs to GitHub Pages
 
 on:
   push:
@@ -23,11 +23,19 @@ jobs:
           node-version: 24
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-      - name: Build playground
-        run: pnpm --filter playground build
+      - name: Build playground and docs
+        run: pnpm --filter playground --filter docs build
+      # The playground owns `/`. The docs own `/docs` plus their root files
+      # (`/api/search`, `/llms.txt`, `/llms-full.txt`, `/404.html`); their `/`
+      # redirect is only for running the docs on their own.
+      - name: Assemble site
+        run: |
+          mkdir site
+          cp -R apps/playground/dist/. site/
+          rsync -a --ignore-existing --exclude=/index.html apps/docs/dist/ site/
       - name: Deploy to GitHub Pages
         uses: jamesives/github-pages-deploy-action@36ee275936a1c16fb4dedae090a06396849f07c0 # v4.7.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           branch: gh-pages
-          folder: apps/playground/dist
+          folder: site

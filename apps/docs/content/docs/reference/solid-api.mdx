@@ -1,0 +1,154 @@
+---
+title: Solid API
+description:
+  createFileTree, the FileTree component, and the reactive primitives over the
+  model.
+---
+
+Everything lives at the package root, `solid-trees`. The Solid layer is a thin
+integration over one imperative model, `FileTreeModel`.
+
+## Model-first story
+
+Start with `createFileTree(options)`. Do not build a large controlled component.
+The primitive creates one stable model for the owner's lifetime. Later option
+changes do not reconfigure the model. Update the model through model methods
+instead.
+
+```tsx title="project-tree.tsx"
+import { createFileTree, FileTree } from 'solid-trees';
+
+export function ProjectTree(props: { paths: readonly string[] }) {
+  const tree = createFileTree({ paths: props.paths, search: true });
+  return <FileTree model={tree} style={{ height: '320px' }} />;
+}
+```
+
+For the shared option meanings behind that call, read
+[Shared concepts](/docs/reference/shared-concepts#shared-option-groups).
+
+## `createFileTree(...)`
+
+`createFileTree(...)`:
+
+- accepts the shared tree-options surface
+- creates the model one time
+- cleans up the model when the current reactive owner disposes (called outside
+  an owner, call `cleanUp()` yourself)
+- returns the `FileTreeModel`
+
+Use model methods when the tree changes after mount. The methods include
+`resetPaths(...)`, `setComposition(...)`, `setGitStatus(...)`, `setIcons(...)`,
+`setLabels(...)`, and the search or mutation methods.
+
+## `<FileTree />`
+
+The Solid component renders the model into the light DOM.
+
+Primary props:
+
+- `model`
+- normal host HTML attributes such as `class` and `style`
+
+Composition props:
+
+- `header`
+- `renderContextMenu`
+
+Behavior notes:
+
+- it renders a virtualized list, so give it a bounded height
+- swapping the `model` prop remounts the view
+- the root DOM id comes from the model's `id` option (`<id>__tree`), not an `id`
+  prop
+- `header` and `renderContextMenu` add Solid rendering onto the model
+  composition surface
+
+## Reading tree state from Solid
+
+Model getters track inside Solid scopes and always return current values
+imperatively. Read them directly in JSX, or derive values through the primitives
+below. Solid code writes back through model methods.
+
+Common read patterns include:
+
+- selected paths for sibling panels or action bars
+- search state for search inputs and result counts
+- custom derived values such as "is this path focused?"
+
+## Primitives
+
+`createFileTreeSelector(model, selector, isEqual?)`
+
+- generic bridge from the model into a Solid memo
+- returns an accessor for a value selected from the current model
+- accepts an optional equality function when the selected value needs custom
+  comparison; `areArraysEqual` covers path lists
+
+`createFileTreeSelection(model)`
+
+- convenience accessor for `readonly string[]` selected paths
+
+`createFileTreeSearch(model)`
+
+- returns the current search snapshot as the `state` accessor, plus the
+  model-backed actions
+- snapshot fields: `isOpen`, `matchingPaths`, `value`
+- actions: `open(initialValue?)`, `close()`, `setValue(value)`,
+  `focusNextMatch()`, `focusPreviousMatch()`
+
+```tsx title="primitives.tsx"
+const tree = createFileTree({ paths, search: true });
+const selectedPaths = createFileTreeSelection(tree);
+const search = createFileTreeSearch(tree);
+const focusedPath = createFileTreeSelector(tree, (model) =>
+  model.getFocusedPath()
+);
+```
+
+## Writing to the model from Solid
+
+Solid writes through the imperative model methods.
+
+Typical write paths are:
+
+- focus and selection methods on the model or item handles. This includes
+  `scrollToPath(...)`, which reveals a path without moving DOM focus and makes
+  optional model focus changes.
+- visible-tree traversal through `focusFirstItem()`, `focusLastItem()`,
+  `focusNextItem()`, `focusPreviousItem()`, and `focusParentItem()`.
+- visible row inspection through `getFocusedIndex()`, `getVisibleCount()`, and
+  `getVisibleRows(start, end)` when surrounding UI needs custom navigation.
+- search methods such as `setSearch(...)` and `openSearch(...)`
+- mutation methods such as `add(...)`, `remove(...)`, `move(...)`, `batch(...)`,
+  and `resetPaths(...)`
+- runtime reconfiguration methods such as `setComposition(...)`,
+  `setGitStatus(...)`, `setIcons(...)`, and `setLabels(...)`
+
+The full list is in [Model API](/docs/reference/model-api).
+
+## Composition surface
+
+`<FileTree>` adds two composition props on top of the model:
+
+- `header` for Solid-rendered header content, above the search input and rows
+- `renderContextMenu(item, context)` for Solid-rendered context menus; providing
+  it enables the menu
+
+Use `composition.contextMenu` on the model for the behavior flags (`enabled`,
+`triggerMode`, `buttonVisibility`) and the `onOpen` / `onClose` callbacks. The
+shared meaning of the composition options is in
+[Shared concepts](/docs/reference/shared-concepts#interaction-and-editing-options).
+
+## Mutation and subscriptions from Solid
+
+Use primitives and tracked getters when Solid UI needs reactive reads. Use
+`model.onMutation(...)` when you need semantic side effects. Examples are
+persistence, logging, or analytics around add, remove, move, reset, or batch
+operations.
+
+## Appearance boundary
+
+Style the host with normal host props such as `class` and `style`. For deeper
+lookup, read [Styling and theming](/docs/reference/styling-and-theming) and
+[Icons](/docs/reference/icons).

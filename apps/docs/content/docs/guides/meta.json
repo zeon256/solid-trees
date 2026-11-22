@@ -1,0 +1,14 @@
+{
+  "title": "Guides",
+  "defaultOpen": true,
+  "pages": [
+    "get-started",
+    "shape-tree-data-for-fast-rendering",
+    "navigate-selection-focus-and-search",
+    "rename-drag-and-trigger-item-actions",
+    "style-and-theme-the-tree",
+    "customize-icons",
+    "show-git-status-and-row-annotations",
+    "handle-large-trees-efficiently"
+  ]
+}

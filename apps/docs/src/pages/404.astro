@@ -1,0 +1,8 @@
+---
+import { NotFound } from '../components/not-found';
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout title="Not Found | solid-trees">
+  <NotFound client:load pathname={Astro.url.pathname} params={Astro.params} />
+</Layout>

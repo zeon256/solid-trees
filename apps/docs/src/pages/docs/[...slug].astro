@@ -1,0 +1,43 @@
+---
+import type { GetStaticPaths, InferGetStaticPropsType } from 'astro';
+
+import { Docs } from '../../components/docs';
+import Layout from '../../layouts/Layout.astro';
+import { gitConfig, repoUrl } from '../../lib/shared';
+import { source } from '../../lib/source';
+
+export const prerender = true;
+
+export const getStaticPaths = (() =>
+  source.getPages().map((page) => ({
+    params: { slug: decodeURI(page.slugs.join('/')) || undefined },
+    props: { page },
+  }))) satisfies GetStaticPaths;
+
+type Props = InferGetStaticPropsType<typeof getStaticPaths>;
+
+const { page } = Astro.props as Props;
+const { body: Content, toc } = await page.data.load();
+const pageTree = await source.serializePageTree(source.getPageTree());
+const githubUrl = `${repoUrl}/blob/${gitConfig.branch}/apps/docs/content/docs/${encodeURI(page.path)}`;
+---
+
+<Layout
+  title={`${page.data.title} | solid-trees`}
+  description={page.data.description}
+>
+  <Docs
+    client:load
+    transition:persist="docs"
+    pathname={Astro.url.pathname}
+    params={Astro.params}
+    tree={pageTree}
+    title={page.data.title}
+    description={page.data.description}
+    toc={toc}
+    markdownUrl={`${page.url}.md`}
+    githubUrl={githubUrl}
+  >
+    <Content />
+  </Docs>
+</Layout>
